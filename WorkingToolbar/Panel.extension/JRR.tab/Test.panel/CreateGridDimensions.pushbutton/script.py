@@ -5,6 +5,7 @@ from pyrevit import revit, forms, script
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
+active_view = uidoc.ActiveView
 
 def sort_grids_by_axis(grids, axis = 'X'):
   # Returns list
@@ -60,44 +61,46 @@ selected_plan_views = forms.select_views(title='Select plan views to dimension',
 
 with revit.Transaction('Create Grids'):
   # Loop through selected plans
-  for view in selected_plan_views:
-    # COLLECT GRIDS ON CURRENT VIEW
-    current_view = view
-    grids_col = FilteredElementCollector(doc, current_view.Id) \
-            .OfClass(Grid)
-    grids_list = list(grids_col)
-    grids_sorted_by_vectors = sort_grids_by_vector(grids_list)
-    # Create dimension strings
-    for key in grids_sorted_by_vectors.keys():
-      grids = grids_sorted_by_vectors.get(key)
-      vector = get_grid_vector(grids[0])
-      ## IMEG has dimension line snap distance set to 3/8"
-      ## Need to figure out how to translate model dimensions to 'paper space' dimensions
+  if selected_plan_views:
+    for view in selected_plan_views:
+      # COLLECT GRIDS ON CURRENT VIEW
+      current_view = view
+      grids_col = FilteredElementCollector(doc, current_view.Id) \
+              .OfClass(Grid)
+      grids_list = list(grids_col)
+      grids_sorted_by_vectors = sort_grids_by_vector(grids_list)
+      # Create dimension strings
+      for key in grids_sorted_by_vectors.keys():
+        grids = grids_sorted_by_vectors.get(key)
+        vector = get_grid_vector(grids[0])
+        ## Convert 3/8" dimension snap distance to model scale
+        offset_vector = vector * (view.Scale * ((0.375) / 12))
+        print(view.Scale)
+        print(vector)
+        print(offset_vector)
+        min_grid = get_min_or_max_grid(vector, grids, 'min')
+        max_grid = get_min_or_max_grid(vector, grids, 'max')
 
-      offset_vector = vector * 4
-      min_grid = get_min_or_max_grid(vector, grids, 'min')
-      max_grid = get_min_or_max_grid(vector, grids, 'max')
+        grid_line_startpoint = min_grid.Curve.GetEndPoint(0)
+        grid_line_endpoint = max_grid.Curve.GetEndPoint(0)
+        #move line points by adding offset_vector
+        overall_dim_line_startpoint = grid_line_startpoint + offset_vector * 0.5
+        overall_dim_line_endpoint = grid_line_endpoint + offset_vector * 0.5
+        grid_dim_line_startpoint = grid_line_startpoint + offset_vector * 1.5
+        grid_dim_line_endpoint = grid_line_endpoint + offset_vector * 1.5
 
-      grid_line_startpoint = min_grid.Curve.GetEndPoint(0)
-      grid_line_endpoint = max_grid.Curve.GetEndPoint(0)
-      #move line points by adding offset_vector
-      overall_dim_line_startpoint = grid_line_startpoint + offset_vector
-      overall_dim_line_endpoint = grid_line_endpoint + offset_vector
-      grid_dim_line_startpoint = grid_line_startpoint + offset_vector * 2.5
-      grid_dim_line_endpoint = grid_line_endpoint + offset_vector * 2.5
+        overall_dim_line = Line.CreateBound(overall_dim_line_startpoint, overall_dim_line_endpoint)
+        grid_dim_line = Line.CreateBound(grid_dim_line_startpoint, grid_dim_line_endpoint)
 
-      overall_dim_line = Line.CreateBound(overall_dim_line_startpoint, overall_dim_line_endpoint)
-      grid_dim_line = Line.CreateBound(grid_dim_line_startpoint, grid_dim_line_endpoint)
+        overall_reference_array = ReferenceArray()
+        grid_reference_array = ReferenceArray()
 
-      overall_reference_array = ReferenceArray()
-      grid_reference_array = ReferenceArray()
-
-      for grid in grids:
-        grid_reference_array.Append(Reference(grid))
-      overall_reference_array.Append(Reference(min_grid))
-      overall_reference_array.Append(Reference(max_grid))
-      doc.Create.NewDimension(current_view, overall_dim_line, overall_reference_array)
-      doc.Create.NewDimension(current_view, grid_dim_line, grid_reference_array)
+        for grid in grids:
+          grid_reference_array.Append(Reference(grid))
+        overall_reference_array.Append(Reference(min_grid))
+        overall_reference_array.Append(Reference(max_grid))
+        doc.Create.NewDimension(current_view, overall_dim_line, overall_reference_array)
+        doc.Create.NewDimension(current_view, grid_dim_line, grid_reference_array)
 
 
 
