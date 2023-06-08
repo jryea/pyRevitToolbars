@@ -1,3 +1,5 @@
+## Need to figure out how to offset dimension strings and convert model dimensions to sheet space 
+
 from Autodesk.Revit.DB import *
 from pyrevit import revit, forms, script
 
