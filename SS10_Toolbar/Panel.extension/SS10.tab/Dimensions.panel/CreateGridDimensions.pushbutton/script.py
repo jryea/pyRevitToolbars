@@ -1,4 +1,7 @@
-## Need to figure out how to offset dimension strings and convert model dimensions to sheet space 
+## 6/12/23: ran into error that dimensions were being created below revits dimension tolerance
+# The problem: when there was only a single grid running in at a certain vector, the min and max grids were returning the same grid
+# Fixed for now by ignoring all vector sets of grids that only contain a single grid
+# May want to try an alternate version that dimensions absolute vector sets. So if grids are the same angle, but running in opposite directions they will get grouped together in the same set
 
 from Autodesk.Revit.DB import *
 from pyrevit import revit, forms, script
@@ -6,6 +9,12 @@ from pyrevit import revit, forms, script
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 active_view = uidoc.ActiveView
+
+def absolute_vector_from_vector(vector):
+  abs_x = abs(vector.X())
+  abs_y = abs(vector.Y())
+  abs_z = abs(vector.Z())
+  return XYZ(abs_x, abs_y, abs_z)
 
 def sort_grids_by_axis(grids, axis = 'X'):
   # Returns list
@@ -72,15 +81,13 @@ with revit.Transaction('Create Grids'):
       # Create dimension strings
       for key in grids_sorted_by_vectors.keys():
         grids = grids_sorted_by_vectors.get(key)
+        if len(grids) <= 1:
+          continue
         vector = get_grid_vector(grids[0])
         ## Convert 3/8" dimension snap distance to model scale
         offset_vector = vector * (view.Scale * ((0.375) / 12))
-        print(view.Scale)
-        print(vector)
-        print(offset_vector)
         min_grid = get_min_or_max_grid(vector, grids, 'min')
         max_grid = get_min_or_max_grid(vector, grids, 'max')
-
         grid_line_startpoint = min_grid.Curve.GetEndPoint(0)
         grid_line_endpoint = max_grid.Curve.GetEndPoint(0)
         #move line points by adding offset_vector
@@ -88,7 +95,6 @@ with revit.Transaction('Create Grids'):
         overall_dim_line_endpoint = grid_line_endpoint + offset_vector * 0.5
         grid_dim_line_startpoint = grid_line_startpoint + offset_vector * 1.5
         grid_dim_line_endpoint = grid_line_endpoint + offset_vector * 1.5
-
         overall_dim_line = Line.CreateBound(overall_dim_line_startpoint, overall_dim_line_endpoint)
         grid_dim_line = Line.CreateBound(grid_dim_line_startpoint, grid_dim_line_endpoint)
 
@@ -96,6 +102,8 @@ with revit.Transaction('Create Grids'):
         grid_reference_array = ReferenceArray()
 
         for grid in grids:
+          grid_start = grid.Curve.GetEndPoint(0)
+          grid_end = grid.Curve.GetEndPoint(1)
           grid_reference_array.Append(Reference(grid))
         overall_reference_array.Append(Reference(min_grid))
         overall_reference_array.Append(Reference(max_grid))
