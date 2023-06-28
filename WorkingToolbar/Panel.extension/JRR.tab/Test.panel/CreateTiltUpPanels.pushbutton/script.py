@@ -1,4 +1,8 @@
+## WALL FOOTINGS
+## TRY CREATING WALLS AT FULL LENGTH AND LATER OFFSETING THE ENDS TO CREATE THE JOINTS
+
 from Autodesk.Revit.DB import *
+from Autodesk.Revit.DB.Structure import StructuralType
 from pyrevit import revit, forms, script
 
 uidoc = __revit__.ActiveUIDocument
@@ -11,31 +15,6 @@ def get_line_vector(line):
   vector = endpoint - startpoint
   normalized_vector = vector.Normalize()
   return normalized_vector
-
-def sort_grids_by_axis(grids, axis = 'X'):
-  # Returns list
-  sorted_grids = grids
-  def sort_x(grid):
-    return grid.Curve.GetEndPoint(0).X
-  def sort_y(grid):
-    return grid.Curve.GetEndPoint(0).Y
-  if axis == 'X':
-    sorted_grids.sort(key=sort_x)
-  if axis == 'Y':
-    sorted_grids.sort(key=sort_y)
-  return sorted_grids
-
-def get_min_or_max_grid(vector, grids, min_or_max = 'min'):
-  if abs(vector.X) > abs(vector.Y):
-    grids_sorted = sort_grids_by_axis(grids, 'Y')
-  else:
-    grids_sorted = sort_grids_by_axis(grids, 'X')
-  if min_or_max == 'min':
-    return grids_sorted[0]
-  else:
-    return grids_sorted[-1]
-
-
 
 # returns a list of XYZ x or y values depending on the input direction
 # includes all of the x(or y) points along the grid and intermediate points (depending on panels)
@@ -96,8 +75,7 @@ def create_joint_reference_planes(grids, direction, num_joints_between_grids):
       cur_ref_plane = doc.Create.NewReferencePlane(XYZ(joint_x_start, joint_y, 100), XYZ(joint_x_end, joint_y, 100), XYZ(0,0,1), active_view)
       cur_ref_plane.Name = 'jointY_{}'.format(index+1)
 
-
-#Collect panel end points from a given joint_width
+# Collect panel end points from a given joint_width
 def get_panel_ends(panel_joints, joint_width):
   joint_offset = joint_width / 2
   panel_ends = []
@@ -138,9 +116,7 @@ def get_panel_points_for_line_segment(line_segment, panel_ends, cardinal_directi
     y_end = line_segment.GetEndPoint(1).Y
     x_point = line_segment.GetEndPoint(0).X
     start_point = XYZ(x_point, y_start, 0)
-    print(start_point)  
     end_point = XYZ(x_point, y_end, 0)
-    print(end_point)
     segment_panel_points = [start_point]
     for end in panel_ends_list:
       # Are segments running bottom to top?
@@ -154,29 +130,55 @@ def get_panel_points_for_line_segment(line_segment, panel_ends, cardinal_directi
     segment_panel_points.append(end_point)
   return segment_panel_points
 
-def create_wall_from_points(start_point, end_point, min_wall_length, wall_mark):
+def create_plan_panel_tag(start_point, end_point, wall):
+  tag_offset = 10
+  tag_X = start_point.X
+  tag_Y = start_point.Y
+  # check to see if running horizontally or vertically
+  if abs(start_point.X - end_point.X) > abs(start_point.Y - end_point.Y):
+    tag_X = (start_point.X + end_point.X) / 2
+    # Check to see if points running right to left
+    if start_point.X > end_point.X:
+      tag_Y = tag_Y - tag_offset
+    else:
+      tag_Y = tag_Y + tag_offset
+  else:
+    tag_Y = (start_point.Y + end_point.Y) / 2
+    # Check to see if points running top to bottom
+    if start_point.Y > end_point.Y:
+      tag_X = tag_X + tag_offset
+    else:
+      tag_X = tag_X - tag_offset
+  tag_point = XYZ(tag_X, tag_Y, 0)
+  IndependentTag.Create(doc, wall_tag_symbol.Id, active_view.Id, Reference(wall), False, TagOrientation.Horizontal, tag_point)
+
+def create_panel_with_tag(start_point, end_point, wall_mark, min_tag_threshold = 0):
     try:
       line = Line.CreateBound(start_point, end_point)
     except:
       pass
       # print('Line is too short')
     else:
-      if line.Length > min_wall_length:
-        cur_wall = Wall.Create(doc, line, wall_type_id, selected_base_level.Id, wall_height, wall_offset, is_flipped, is_structural)
-        WallUtils.DisallowWallJoinAtEnd(cur_wall, 0)
-        WallUtils.DisallowWallJoinAtEnd(cur_wall, 1)
-        # Set the Wall location to exterior face
-        # 1- Core Centerline
-        # 2- Finish Face: Exterior
-        # 3- Finish Face: Interior
-        # 4- Core Face: Exterior
-        # 5- Core Face: Interior
-        cur_wall.get_Parameter(BuiltInParameter.ALL_MODEL_MARK).Set(wall_mark)
-        cur_wall.get_Parameter(BuiltInParameter.WALL_KEY_REF_PARAM).Set(5)
+      cur_wall = Wall.Create(doc, line, wall_type_id, selected_base_level.Id, wall_height, wall_offset, is_flipped, is_structural)
+      cur_footing = WallFoundation.Create(doc,footing_type_id, cur_wall.Id)
+      WallUtils.DisallowWallJoinAtEnd(cur_wall, 0)
+      WallUtils.DisallowWallJoinAtEnd(cur_wall, 1)
+      # Set the Wall location to exterior face
+      # 1- Core Centerline
+      # 2- Finish Face: Exterior
+      # 3- Finish Face: Interior
+      # 4- Core Face: Exterior
+      # 5- Core Face: Interior
+      cur_wall.get_Parameter(BuiltInParameter.ALL_MODEL_MARK).Set(wall_mark)
+      cur_wall.get_Parameter(BuiltInParameter.WALL_KEY_REF_PARAM).Set(5)
+      # Adding tag to wall
+      if line.Length > min_tag_threshold:
+        create_plan_panel_tag(start_point, end_point, cur_wall)
 
-
-def create_walls_from_segments(line_segments, cardinal_direction, min_wall_length):
+def create_panels_from_segments(line_segments, cardinal_direction, min_wall_length):
   # Choosing which set of points to create walls from (horizontal or vertical)
+  min_panel_length = 3
+  min_tagging_length = 10
   if cardinal_direction == 'north' or cardinal_direction == 'south':
     panel_ends = panel_ends_horizontal
   if cardinal_direction == 'west' or cardinal_direction == 'east':
@@ -193,8 +195,13 @@ def create_walls_from_segments(line_segments, cardinal_direction, min_wall_lengt
       if len(wall_suffix) == 1:
         wall_suffix = '0' + wall_suffix
       wall_mark_string = wall_prefix + wall_suffix
-      wall_counter += 1
-      cur_wall = create_wall_from_points(line_segment_points[index], line_segment_points[index + 1], min_wall_length, wall_mark_string)
+      panel_start = line_segment_points[index]
+      panel_end = line_segment_points[index + 1]
+      wall_line_length = Line.CreateBound(panel_start, panel_end).Length
+      if wall_line_length > min_tagging_length:
+        wall_counter += 1
+      if wall_line_length > min_panel_length:
+        cur_wall = create_panel_with_tag(panel_start, panel_end, wall_mark_string, min_tagging_length)
 
 def offset_curves(lines_list, offset):
   # returns an offset list of curves
@@ -207,8 +214,16 @@ def offset_curves(lines_list, offset):
 #lines Need to be in sequential order
 # TEMPORARY (REPLACE WITH USER SELECTED WALL TYPE)
 wall_type_id = ElementId(1234631)
+footing_type_id = ElementId(1710120)
 wall_type = doc.GetElement(wall_type_id)
 wall_curve_loop_offset = -abs(wall_type.Width / 2)
+
+footing_symbol = doc.GetElement(ElementId(1915859))
+print(footing_symbol)
+print(footing_symbol.ToString)
+
+active_view_level = active_view.GenLevel
+print(active_view_level)
 
 # Line segment collection
 # Get IMEG-RED-CONSTRUCTION LINE GraphicsStyle
@@ -236,6 +251,28 @@ grids_list = list(grid_col)
 vertical_grids = [grid for grid in grids_list if int(get_line_vector(grid.Curve).X) == 0]
 horizontal_grids = [grid for grid in grids_list if int(get_line_vector(grid.Curve).Y) == 0]
 
+# Collect wall tags
+family_symbol_col = FilteredElementCollector(doc)\
+                     .OfClass(FamilySymbol)
+
+family_symbol_list = list(family_symbol_col)
+wall_tag_symbol = None
+for symbol in family_symbol_list:
+  if Element.Name.GetValue(symbol):
+    wall_tag_symbol = symbol
+
+# wall_tag = None
+# for tag in wall_tag_list:
+#   if Element.Name.GetValue(doc.GetElement(tag.GetTypeId())) == 'Tilt Up Panel Mark':
+#     wall_tag = tag
+# if wall_tag:
+#   wall_tag_symbol = doc.GetElement(wall_tag.GetTypeId())
+# else:
+#   print('Please Load Tilt Up Panel Mark Tag')
+
+
+# print(wall_tag_symbol)
+
 # Wall Variables
 joint_width = .0625
 wall_offset = -2.0
@@ -251,15 +288,13 @@ selected_base_level = forms.select_levels(title= 'Select Base Level',multiple= F
 selected_top_level = forms.select_levels(title= 'Select Top Level',multiple= False)
 wall_height = selected_top_level.Elevation - selected_base_level.Elevation
 
-
-
 with revit.Transaction('Create Walls'):
   # setting minimum length to ignore during wall creation
   minimum_wall_length = 2
-  create_walls_from_segments(line_segments_north, 'north', minimum_wall_length)
-  create_walls_from_segments(line_segments_south, 'south', minimum_wall_length)
-  create_walls_from_segments(line_segments_east, 'east', minimum_wall_length)
-  create_walls_from_segments(line_segments_west, 'west', minimum_wall_length)
+  create_panels_from_segments(line_segments_north, 'north', minimum_wall_length)
+  create_panels_from_segments(line_segments_south, 'south', minimum_wall_length)
+  create_panels_from_segments(line_segments_east, 'east', minimum_wall_length)
+  create_panels_from_segments(line_segments_west, 'west', minimum_wall_length)
 
 
 
