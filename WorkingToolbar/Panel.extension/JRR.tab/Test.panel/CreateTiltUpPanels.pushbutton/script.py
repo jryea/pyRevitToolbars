@@ -4,41 +4,36 @@
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB.Structure import StructuralType
 from pyrevit import revit, forms, script
+import JR_utilities as utils
+import JR_utilities.geometry as geo
+from JR_utilities import ref_elements, views, elements, annotation
+
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 active_view = uidoc.ActiveView
 
-def get_line_vector(line):
-  startpoint = line.GetEndPoint(0)
-  endpoint = line.GetEndPoint(1)
-  vector = endpoint - startpoint
-  normalized_vector = vector.Normalize()
-  return normalized_vector
+# def get_line_vector(line):
+#   startpoint = line.GetEndPoint(0)
+#   endpoint = line.GetEndPoint(1)
+#   vector = endpoint - startpoint
+#   normalized_vector = vector.Normalize()
+#   return normalized_vector
 
 # returns a list of XYZ x or y values depending on the input direction
 # includes all of the x(or y) points along the grid and intermediate points (depending on panels)
-def get_panel_joints(grids, direction, panels_per_bay):
-  if len(grids) <= 1:
-    print('There are not enough grids to create panel joints')
-    return
-  if direction == 'horizontal':
-    grid_points = [grid.Curve.GetEndPoint(0).X for grid in grids]
-  if direction == 'vertical':
-    grid_points = [grid.Curve.GetEndPoint(0).Y for grid in grids]
-  panel_joints = grid_points[:]
-  distance_between_grids = grid_points[1] - grid_points[0]
-  distance_between_panels = distance_between_grids / panels_per_bay
 
-  for index, grid_point in enumerate(grid_points):
-    # Skip last grid
-    if index < len(grid_points) - 1:
-      # Add intermediate points
-      for i in range(panels_per_bay - 1):
-        intermediate_joint = grid_points[index] + distance_between_panels * (i+1)
-        panel_joints.append(intermediate_joint)
-  panel_joints.sort()
-  return panel_joints
+def get_panel_joints(grids, direction, panels_per_bay):
+  grid_pts_xy = ref_elements.get_grid_pts_xy(grids, direction)
+  print(len(grid_pts_xy))
+  intermediate_pts_xy = geo.get_intermediate_pts_xy(grid_pts_xy, panels_per_bay)
+  print(len(intermediate_pts_xy))
+  combined_pts_xy = grid_pts_xy + intermediate_pts_xy
+  print(len(combined_pts_xy))
+  combined_pts_xy.sort()
+  for pt_xy in combined_pts_xy:
+    print(pt_xy)
+  return combined_pts_xy
 
 def create_joint_reference_planes(grids, direction, num_joints_between_grids):
   if len(grids) <= 1:
@@ -203,13 +198,7 @@ def create_panels_from_segments(line_segments, cardinal_direction, min_wall_leng
       if wall_line_length > min_panel_length:
         cur_wall = create_panel_with_tag(panel_start, panel_end, wall_mark_string, min_tagging_length)
 
-def offset_curves(lines_list, offset):
-  # returns an offset list of curves
-  curve_loop = CurveLoop()
-  for line in lines_list:
-    curve_loop.Append(line)
-  offset_curve_loop = CurveLoop.CreateViaOffset(curve_loop, offset, XYZ(0,0,1))
-  return list(offset_curve_loop)
+
 
 #lines Need to be in sequential order
 # TEMPORARY (REPLACE WITH USER SELECTED WALL TYPE)
@@ -236,20 +225,20 @@ curve_red_construction = [line for line in curve_element_list if str(line.LineSt
 line_list = [line.GeometryCurve for line in curve_red_construction]
 
 # Create curve loop and offset slab edge to create wall centerline
-wall_curve_loop_list = offset_curves(line_list, wall_curve_loop_offset)
+wall_curve_loop_list = geo.offset_curves(line_list, wall_curve_loop_offset)
 
 # Dividing line segments into North/East/South/West
-line_segments_north = [line for line in wall_curve_loop_list if int((get_line_vector(line).X) == 1)]
-line_segments_south = [line for line in wall_curve_loop_list if int((get_line_vector(line).X) == -1)]
-line_segments_west = [line for line in wall_curve_loop_list if int((get_line_vector(line).Y) == 1)]
-line_segments_east = [line for line in wall_curve_loop_list if int((get_line_vector(line).Y) == -1)]
+line_segments_north = [line for line in wall_curve_loop_list if int((geo.get_line_vector(line).X) == 1)]
+line_segments_south = [line for line in wall_curve_loop_list if int((geo.get_line_vector(line).X) == -1)]
+line_segments_west = [line for line in wall_curve_loop_list if int((geo.get_line_vector(line).Y) == 1)]
+line_segments_east = [line for line in wall_curve_loop_list if int((geo.get_line_vector(line).Y) == -1)]
 
 # Grid collection
 grid_col = FilteredElementCollector(doc, active_view.Id) \
             .OfClass(Grid)
 grids_list = list(grid_col)
-vertical_grids = [grid for grid in grids_list if int(get_line_vector(grid.Curve).X) == 0]
-horizontal_grids = [grid for grid in grids_list if int(get_line_vector(grid.Curve).Y) == 0]
+vertical_grids = [grid for grid in grids_list if int(geo.get_line_vector(grid.Curve).X) == 0]
+horizontal_grids = [grid for grid in grids_list if int(geo.get_line_vector(grid.Curve).Y) == 0]
 
 # Collect wall tags
 family_symbol_col = FilteredElementCollector(doc)\
@@ -261,26 +250,16 @@ for symbol in family_symbol_list:
   if Element.Name.GetValue(symbol):
     wall_tag_symbol = symbol
 
-# wall_tag = None
-# for tag in wall_tag_list:
-#   if Element.Name.GetValue(doc.GetElement(tag.GetTypeId())) == 'Tilt Up Panel Mark':
-#     wall_tag = tag
-# if wall_tag:
-#   wall_tag_symbol = doc.GetElement(wall_tag.GetTypeId())
-# else:
-#   print('Please Load Tilt Up Panel Mark Tag')
-
-
-# print(wall_tag_symbol)
-
 # Wall Variables
 joint_width = .0625
 wall_offset = -2.0
 is_flipped = False
 is_structural = True
 
-panel_joints_horizontal = get_panel_joints(vertical_grids, 'horizontal', 2)
-panel_joints_vertical = get_panel_joints(horizontal_grids, 'vertical', 2)
+panel_joints_horizontal = get_panel_joints(vertical_grids, 'X', 2)
+print(len(panel_joints_horizontal))
+panel_joints_vertical = get_panel_joints(horizontal_grids, 'Y', 2)
+print(len(panel_joints_vertical))
 panel_ends_horizontal = get_panel_ends(panel_joints_horizontal, joint_width)
 panel_ends_vertical = get_panel_ends(panel_joints_vertical, joint_width)
 

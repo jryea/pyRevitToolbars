@@ -46,15 +46,6 @@ print(doc.GetElement(floor_type_id))
 
 #Have user select floor type
 
-# public static Floor Create(
-# 	Document document,
-# 	IList<CurveLoop> profile,
-# 	ElementId floorTypeId,
-# 	ElementId levelId,
-# 	bool isStructural,
-# 	Line slopeArrow,
-# 	double slope
-# )
 with revit.Transaction('Create Slab'):
   Floor.Create(doc, curve_loop_list, floor_type_id, current_view_level_id, True, floor_lines[0], 0.0)
   for curve in inset_curves:
