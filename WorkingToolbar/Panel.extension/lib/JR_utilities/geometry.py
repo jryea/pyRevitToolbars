@@ -29,13 +29,9 @@ def offset_curves(lines_list, offset):
 def get_intermediate_pts_xy(pts_xy, divisions):
   intermediate_pts_xy = []
   for i in range(len(pts_xy) - 1):
-    print('point ' + str(i) +':' + str(pts_xy[i]))
     distance = abs(pts_xy[i+1] - pts_xy[i]) / divisions
-    print('distance: ' + str(distance))
     for j in range(1, divisions):
-      print('\tintermediate point ' + str(j) + ':')
       intermediate_pt = pts_xy[i] + distance * j
-      print('\t' + str(intermediate_pt))
       intermediate_pts_xy.append(intermediate_pt)
   return intermediate_pts_xy
 

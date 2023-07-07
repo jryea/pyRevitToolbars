@@ -42,7 +42,6 @@ def find_xy_grid_intersections(grids):
   grid_intersections = []
   for h_grid_curve in horizontal_grid_curves:
     for v_grid_curve in vertical_grid_curves:
-      # print(h_grid_)
       if h_grid_curve.Intersect(v_grid_curve) == SetComparisonResult.Overlap:
         int_point = XYZ(h_grid_curve.GetEndPoint(0).X, v_grid_curve.GetEndPoint(0).Y,0)
         if str(int_point) not in str(grid_intersections):
@@ -58,8 +57,8 @@ def get_min_or_max_grid(vector, grids, min_or_max = 'min'):
     return grids_sorted[0]
   else:
     return grids_sorted[-1]
-  
-  def get_grid_vector(grid):
+
+def get_grid_vector(grid):
   grid_line = grid.Curve
   startpoint = grid_line.GetEndPoint(0)
   endpoint = grid_line.GetEndPoint(1)
