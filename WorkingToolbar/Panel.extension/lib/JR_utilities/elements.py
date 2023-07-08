@@ -1,3 +1,5 @@
+from Autodesk.Revit.DB import *
+
 # SYMBOLS
 
 def get_symbol_by_name(symbol_name, all_symbols):

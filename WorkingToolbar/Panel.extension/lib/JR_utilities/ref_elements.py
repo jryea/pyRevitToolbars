@@ -1,3 +1,5 @@
+from Autodesk.Revit.DB import *
+
 # GRIDs
 
 def get_grid_pts_xy(grids, direction = 'X'):

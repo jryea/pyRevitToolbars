@@ -8,20 +8,9 @@ import JR_utilities as utils
 import JR_utilities.geometry as geo
 from JR_utilities import ref_elements, views, elements, annotation
 
-
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 active_view = uidoc.ActiveView
-
-# def get_line_vector(line):
-#   startpoint = line.GetEndPoint(0)
-#   endpoint = line.GetEndPoint(1)
-#   vector = endpoint - startpoint
-#   normalized_vector = vector.Normalize()
-#   return normalized_vector
-
-# returns a list of XYZ x or y values depending on the input direction
-# includes all of the x(or y) points along the grid and intermediate points (depending on panels)
 
 def get_panel_joints(grids, direction, panels_per_bay):
   grid_pts_xy = ref_elements.get_grid_pts_xy(grids, direction)
@@ -198,8 +187,6 @@ def create_panels_from_segments(line_segments, cardinal_direction, min_wall_leng
       if wall_line_length > min_panel_length:
         cur_wall = create_panel_with_tag(panel_start, panel_end, wall_mark_string, min_tagging_length)
 
-
-
 #lines Need to be in sequential order
 # TEMPORARY (REPLACE WITH USER SELECTED WALL TYPE)
 wall_type_id = ElementId(1234631)
@@ -208,11 +195,8 @@ wall_type = doc.GetElement(wall_type_id)
 wall_curve_loop_offset = -abs(wall_type.Width / 2)
 
 footing_symbol = doc.GetElement(ElementId(1915859))
-print(footing_symbol)
-print(footing_symbol.ToString)
 
 active_view_level = active_view.GenLevel
-print(active_view_level)
 
 # Line segment collection
 # Get IMEG-RED-CONSTRUCTION LINE GraphicsStyle
