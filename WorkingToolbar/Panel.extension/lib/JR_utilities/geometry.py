@@ -79,3 +79,34 @@ def find_pts_inside_xy_border(points, curve_loop):
       points_inside_border.append(point)
   return points_inside_border
 
+def get_min_max_xy_extents(lines_list):
+  start_x = lines_list[0].GetEndPoint(0).X
+  start_y = lines_list[0].GetEndPoint(0).Y
+  max_x = start_x
+  max_y = start_y
+  min_x = start_x
+  min_y = start_y
+  for line in lines_list :
+    line_start = line.GetEndPoint(0)
+    line_end = line.GetEndPoint(1)
+    # find max_x
+    if line_start.X > max_x:
+      max_x = line_start.X
+    if line_end.X > max_x:
+      max_x = line_end.X
+    # find min_x
+    if line_start.X < min_x:
+      min_x = line_start.X
+    if line_end.X < min_x:
+      min_x = line_end.X
+    # find max_y
+    if line_start.Y > max_y:
+      max_y = line_start.Y
+    if line_end.Y > max_y:
+      max_y = line_end.Y
+    # find min_y
+    if line_start.Y < min_y:
+      min_y = line_start.Y
+    if line_end.Y < min_y:
+      min_y = line_end.Y
+  return {'max_x': max_x, 'min_x': min_x, 'max_y': max_y, 'min_y': min_y}
