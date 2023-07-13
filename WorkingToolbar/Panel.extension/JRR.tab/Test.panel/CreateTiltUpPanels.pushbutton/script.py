@@ -6,7 +6,7 @@ from Autodesk.Revit.DB.Structure import StructuralType
 from pyrevit import revit, forms, script
 import JR_utilities as utils
 import JR_utilities.geometry as geo
-from JR_utilities import ref_elements, views, elements, annotation
+from JR_utilities import ref_elements, views, elements, annotations
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
@@ -66,6 +66,8 @@ def get_panel_ends(panel_joints, joint_width):
   for joint in panel_joints:
     panel_ends.append(joint - joint_offset)
     panel_ends.append(joint + joint_offset)
+    # panel_ends.append(joint)
+    # panel_ends.append(joint)
   return panel_ends
 
 # Return XYZ points for a line segment
@@ -138,10 +140,36 @@ def create_plan_panel_tag(start_point, end_point, wall):
 
 def create_panel_with_tag(start_point, end_point, wall_mark, min_tag_threshold = 0):
     try:
-      line = Line.CreateBound(start_point, end_point)
+      sp_x = start_point.X
+      sp_y = start_point.Y
+      sp_z = start_point.Z
+      ep_x = end_point.X
+      ep_y = end_point.Y
+      ep_z = end_point.Z
+      if round(start_point.Y, 1) == round(end_point.Y, 1) and end_point.X - start_point.X > 0:
+        sp_x = sp_x - joint_offset
+        ep_x = ep_x + joint_offset
+        print(sp_x, ep_x)
+      elif round(start_point.Y, 1) == round(end_point.Y, 1) and end_point.X - start_point.X < 0:
+        sp_x = sp_x + joint_offset
+        ep_x = ep_x - joint_offset
+        print(sp_x, ep_x)
+      elif round(start_point.X, 1) == round(end_point.X, 1) and end_point.Y - start_point.Y > 0:
+        sp_y = sp_y - joint_offset
+        ep_y = ep_y + joint_offset
+        print(sp_y, ep_y)
+      elif round(start_point.X, 1) == round(end_point.X, 1) and end_point.Y - start_point.Y < 0:
+        sp_y = sp_y + joint_offset
+        ep_y = ep_y - joint_offset
+        print(sp_y, ep_y)
+      else:
+        print('THIS IS NOT WHAT I WANT!!')
+      sp = XYZ(sp_x, sp_y, sp_z)
+      ep = XYZ(ep_x, ep_y, ep_z)
+      line = Line.CreateBound(sp, ep)
     except:
+      print('Line is too short')
       pass
-      # print('Line is too short')
     else:
       cur_wall = Wall.Create(doc, line, wall_type_id, selected_base_level.Id, wall_height, wall_offset, is_flipped, is_structural)
       cur_footing = WallFoundation.Create(doc,footing_type_id, cur_wall.Id)
@@ -198,6 +226,7 @@ footing_symbol = doc.GetElement(ElementId(1915859))
 
 active_view_level = active_view.GenLevel
 
+
 # Line segment collection
 # Get IMEG-RED-CONSTRUCTION LINE GraphicsStyle
 # All lines in view
@@ -236,6 +265,7 @@ for symbol in family_symbol_list:
 
 # Wall Variables
 joint_width = .0625
+joint_offset = joint_width / 2
 wall_offset = -2.0
 is_flipped = False
 is_structural = True
@@ -259,16 +289,28 @@ with revit.Transaction('Create Walls'):
   create_panels_from_segments(line_segments_east, 'east', minimum_wall_length)
   create_panels_from_segments(line_segments_west, 'west', minimum_wall_length)
 
-
-
-
-
-
-
-
-
-
-
+with revit.Transaction('Add Joint spacing'):
+  wall_col = FilteredElementCollector(doc).OfClass(Wall)
+  wall_list = list(wall_col)
+  for wall in wall_list:
+    wall_curve = wall.Location.Curve
+    print(geo.get_line_vector(wall_curve))
+    sp = wall_curve.GetEndPoint(0)
+    ep = wall_curve.GetEndPoint(1)
+    if geo.get_line_vector(wall_curve).X == 1:
+      sp = XYZ(sp.X + joint_offset, sp.Y, sp.Z)
+      ep = XYZ(ep.X - joint_offset, ep.Y, ep.Z)
+    elif geo.get_line_vector(wall_curve).X == -1:
+      sp = XYZ(sp.X - joint_offset, sp.Y, sp.Z)
+      ep = XYZ(ep.X + joint_offset, ep.Y, ep.Z)
+    elif geo.get_line_vector(wall_curve).Y == 1:
+      sp = XYZ(sp.X, sp.Y + joint_offset, sp.Z)
+      ep = XYZ(ep.X, ep.Y - joint_offset, ep.Z)
+    elif geo.get_line_vector(wall_curve).Y == -1:
+      sp = XYZ(sp.X, sp.Y - joint_offset, sp.Z)
+      ep = XYZ(ep.X, ep.Y + joint_offset, ep.Z)
+    new_wall_curve = Line.CreateBound(sp, ep)
+    wall.Location.Curve = new_wall_curve
 
 
 

@@ -34,7 +34,6 @@ column_selected_list = [column for column in column_list if Element.Name.GetValu
 curve_blue_construction = [line for line in curve_element_list if str(line.LineStyle.Name) == 'IMEG_00-BLUE-CONSTRUCTION LINE']
 lines_blue_construction = [line.GeometryCurve for line in curve_blue_construction]
 
-print()
 line_segments_west = [line for line in floor_lines if int((geometry.get_line_vector(line).Y) == 1)]
 line_segments_east = [line for line in floor_lines if int((geometry.get_line_vector(line).Y) == -1)]
 

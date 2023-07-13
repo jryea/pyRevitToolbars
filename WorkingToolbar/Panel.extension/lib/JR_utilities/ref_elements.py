@@ -1,4 +1,5 @@
 from Autodesk.Revit.DB import *
+from JR_utilities import geometry
 
 # GRIDs
 
@@ -67,3 +68,11 @@ def get_grid_vector(grid):
   vector = endpoint - startpoint
   normalized_vector = vector.Normalize()
   return normalized_vector
+
+# REFERENCE PLANES
+
+def get_z_elev_from_y_and_rp_slope(reference_plane, y):
+  rp_sp = reference_plane.BubbleEnd
+  rp_ep = reference_plane.FreeEnd
+  z_elev = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z , y)
+  return z_elev

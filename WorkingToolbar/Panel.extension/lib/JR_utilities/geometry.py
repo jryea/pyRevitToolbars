@@ -43,6 +43,13 @@ def find_intersection(line1, line2):
   intersection = results.Item[0]
   return intersection.XYZPoint
 
+def get_y_from_slope(x1, y1, x2, y2, x):
+  # y = mx + c, m = slope, c = y-intercept
+  m = (y1 + y2) / (x1 + x2)
+  c = y1 - m * x1
+  y = m * x + c
+  return y
+
 def find_pts_inside_xy_border(points, curve_loop):
   curves_list = list(curve_loop.GetEnumerator())
   curves_top = [curve for curve in curves_list if round(curve.GetEndPoint(0).Y, 5) == round(curve.GetEndPoint(1).Y, 5) and curve.GetEndPoint(0).X < curve.GetEndPoint(1).X ]
