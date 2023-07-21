@@ -1,7 +1,6 @@
 from Autodesk.Revit.DB import *
 
-# SYMBOLS
-
+# FAMILY INSTANCES 
 def get_symbol_by_name(symbol_name, all_symbols):
   symbol = None
   for e in all_symbols:
@@ -9,6 +8,17 @@ def get_symbol_by_name(symbol_name, all_symbols):
       symbol = e
   if not symbol:
     print(symbol_name + ' not found')
+  else:
+    return symbol
+  
+def get_symbol_by_family_and_name(symbol_name, family_name, all_symbols):
+  symbol = None
+  for e in all_symbols:
+    # print(e.Family)
+    if Element.Name.GetValue(e) == symbol_name and Element.Name.GetValue(e.Family) == family_name:
+      symbol = e
+  if not symbol:
+    print('{} or {} not found'.format(symbol_name, family_name))
   else:
     return symbol
 
@@ -61,12 +71,39 @@ def get_beam_pts_from_sorted_columns(document, columns, max_length):
 
 # COLUMNS
 
+def pick_column_by_type(symbol, columns_list):
+  symbol = None
+  for e in all_symbols:
+    if Element.Name.GetValue(e) == symbol_name:
+      symbol = e
+  if not symbol:
+    print(symbol_name + ' not found')
+  else:
+    return symbol
+
 def sort_columns(columns):
-  sorted_columns = columns
+  presort_columns = columns
+  sorted_columns = []
+  flattened_sorted_columns = []
+  sorted_column_row = []
   def sort_x(column):
     return column.Location.Point.X
   def sort_y(column):
     return column.Location.Point.Y
-  sorted_columns.sort(key=sort_x)
-  sorted_columns.sort(key=sort_y)
-  return sorted_columns
+  presort_columns.sort(key=sort_y)
+  for i, column in enumerate(presort_columns):
+    if len(sorted_column_row) == 0:
+      print('adding column to empty row')
+      sorted_column_row.append(column)
+    elif round(column.Location.Point.Y, 2) == round(sorted_column_row[-1].Location.Point.Y, 2):
+      print('adding column to row')
+      sorted_column_row.append(column)
+    else:
+      sorted_columns.append(sorted_column_row)
+      sorted_column_row = [column]
+  sorted_columns.append(sorted_column_row)
+  for group in sorted_columns:
+    for col in group:
+        flattened_sorted_columns.append(col)
+  return flattened_sorted_columns
+

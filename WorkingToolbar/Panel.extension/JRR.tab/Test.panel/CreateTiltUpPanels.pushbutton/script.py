@@ -1,5 +1,3 @@
-## WALL FOOTINGS
-## TRY CREATING WALLS AT FULL LENGTH AND LATER OFFSETING THE ENDS TO CREATE THE JOINTS
 
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB.Structure import StructuralType
@@ -171,8 +169,8 @@ def create_panel_with_tag(start_point, end_point, wall_mark, min_tag_threshold =
       print('Line is too short')
       pass
     else:
-      cur_wall = Wall.Create(doc, line, wall_type_id, selected_base_level.Id, wall_height, wall_offset, is_flipped, is_structural)
-      cur_footing = WallFoundation.Create(doc,footing_type_id, cur_wall.Id)
+      cur_wall = Wall.Create(doc, line, wall_type.Id, selected_base_level.Id, wall_height, wall_offset, is_flipped, is_structural)
+      # cur_footing = WallFoundation.Create(doc,footing_type_id, cur_wall.Id)
       WallUtils.DisallowWallJoinAtEnd(cur_wall, 0)
       WallUtils.DisallowWallJoinAtEnd(cur_wall, 1)
       # Set the Wall location to exterior face
@@ -217,15 +215,25 @@ def create_panels_from_segments(line_segments, cardinal_direction, min_wall_leng
 
 #lines Need to be in sequential order
 # TEMPORARY (REPLACE WITH USER SELECTED WALL TYPE)
-wall_type_id = ElementId(1234631)
-footing_type_id = ElementId(1710120)
-wall_type = doc.GetElement(wall_type_id)
+
+wall_col = FilteredElementCollector(doc)\
+           .OfCategory(BuiltInCategory.OST_Walls)\
+           .WhereElementIsElementType()
+wall_list = list(wall_col)
+
+class WallType(forms.TemplateListItem):
+  @property
+  def name(self):
+    type_id = self.Id
+    return Element.Name.GetValue(doc.GetElement(self.Id))
+
+wall_type_options = [WallType(wall_type) for wall_type in wall_list]
+wall_type = forms.SelectFromList.show(wall_type_options, multiselect = False, title = 'Select wall type')
 wall_curve_loop_offset = -abs(wall_type.Width / 2)
 
-footing_symbol = doc.GetElement(ElementId(1915859))
+# footing_symbol = doc.GetElement(ElementId(1915859))
 
 active_view_level = active_view.GenLevel
-
 
 # Line segment collection
 # Get IMEG-RED-CONSTRUCTION LINE GraphicsStyle
@@ -269,10 +277,11 @@ joint_offset = joint_width / 2
 wall_offset = -2.0
 is_flipped = False
 is_structural = True
+panels_per_bay = 2
 
-panel_joints_horizontal = get_panel_joints(vertical_grids, 'X', 2)
+panel_joints_horizontal = get_panel_joints(vertical_grids, 'X', panels_per_bay)
 print(len(panel_joints_horizontal))
-panel_joints_vertical = get_panel_joints(horizontal_grids, 'Y', 2)
+panel_joints_vertical = get_panel_joints(horizontal_grids, 'Y', panels_per_bay)
 print(len(panel_joints_vertical))
 panel_ends_horizontal = get_panel_ends(panel_joints_horizontal, joint_width)
 panel_ends_vertical = get_panel_ends(panel_joints_vertical, joint_width)
