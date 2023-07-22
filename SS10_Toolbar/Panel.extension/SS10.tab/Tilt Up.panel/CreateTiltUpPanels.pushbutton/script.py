@@ -22,41 +22,6 @@ def get_panel_joints(grids, direction, panels_per_bay):
     print(pt_xy)
   return combined_pts_xy
 
-def create_joint_reference_planes(grids, direction, num_joints_between_grids):
-  if len(grids) <= 1:
-    print('There are not enough grids to create reference planes')
-    return
-  if direction == 'horizontal':
-    joint_x_list = []
-    joint_y_start = grids[0].Curve.GetEndPoint(0).Y
-    joint_y_end = grids[0].Curve.GetEndPoint(1).Y
-    # Loop through all grids, but last one
-    for index in range(0, len(grids) - 1):
-      first_grid_x = grids[index].Curve.GetEndPoint(0).X
-      next_grid_x = grids[index + 1].Curve.GetEndPoint(0).X
-      distance_between_joints = (next_grid_x - first_grid_x) / num_joints_between_grids
-      # create joint X values between grids:
-      for i in range(0 , num_joints_between_grids - 1):
-        joint_x_list.append(first_grid_x + distance_between_joints * (i+1))
-    for index, joint_x in enumerate(joint_x_list):
-      cur_ref_plane = doc.Create.NewReferencePlane(XYZ(joint_x, joint_y_start, 100), XYZ(joint_x, joint_y_end, 100), XYZ(0,0,1), active_view)
-      cur_ref_plane.Name = 'jointX_{}'.format(index+1)
-  if direction == 'vertical':
-    joint_y_list = []
-    joint_x_start = grids[0].Curve.GetEndPoint(0).X
-    joint_x_end = grids[0].Curve.GetEndPoint(1).X
-    # Loop through all grids, but last one
-    for index in range(0, len(grids) - 1):
-      first_grid_y = grids[index].Curve.GetEndPoint(0).Y
-      next_grid_y = grids[index + 1].Curve.GetEndPoint(0).Y
-      distance_between_joints = (next_grid_y - first_grid_y) / num_joints_between_grids
-      # create joint X values between grids:
-      for i in range(0 , num_joints_between_grids - 1):
-        joint_y_list.append(first_grid_y + distance_between_joints * (i+1))
-    for index, joint_y in enumerate(joint_y_list):
-      cur_ref_plane = doc.Create.NewReferencePlane(XYZ(joint_x_start, joint_y, 100), XYZ(joint_x_end, joint_y, 100), XYZ(0,0,1), active_view)
-      cur_ref_plane.Name = 'jointY_{}'.format(index+1)
-
 # Collect panel end points from a given joint_width
 def get_panel_ends(panel_joints, joint_width):
   joint_offset = joint_width / 2
@@ -215,11 +180,11 @@ def create_panels_from_segments(line_segments, cardinal_direction, min_wall_leng
 
 #lines Need to be in sequential order
 # TEMPORARY (REPLACE WITH USER SELECTED WALL TYPE)
-
 wall_col = FilteredElementCollector(doc)\
            .OfCategory(BuiltInCategory.OST_Walls)\
            .WhereElementIsElementType()
 wall_list = list(wall_col)
+wall_list.sort()
 
 class WallType(forms.TemplateListItem):
   @property
@@ -230,8 +195,6 @@ class WallType(forms.TemplateListItem):
 wall_type_options = [WallType(wall_type) for wall_type in wall_list]
 wall_type = forms.SelectFromList.show(wall_type_options, multiselect = False, title = 'Select wall type')
 wall_curve_loop_offset = -abs(wall_type.Width / 2)
-
-# footing_symbol = doc.GetElement(ElementId(1915859))
 
 active_view_level = active_view.GenLevel
 
@@ -272,12 +235,15 @@ for symbol in family_symbol_list:
     wall_tag_symbol = symbol
 
 # Wall Variables
-joint_width = .0625
+joint_width = (float(forms.ask_for_string(prompt = 'Enter joint width in inches', title = 'Joint width'))) / 12
+print(joint_width)
+# joint_width = .0625
 joint_offset = joint_width / 2
 wall_offset = -2.0
 is_flipped = False
 is_structural = True
-panels_per_bay = 2
+panels_per_bay = int(forms.ask_for_string(prompt = 'Enter number of panels per grid gap', title = 'Panels per bay'))
+# panels_per_bay = 2
 
 panel_joints_horizontal = get_panel_joints(vertical_grids, 'X', panels_per_bay)
 print(len(panel_joints_horizontal))

@@ -58,6 +58,9 @@ wall_curves_offset = -(5 / 12)
 
 wall_lines = geometry.offset_curves(floor_lines, wall_curves_offset)
 
+panels_per_bay = int(forms.ask_for_string(prompt = 'Enter number of panels per grid gap', title = 'Panels per bay'))
+
+
 line_segments_north = [line for line in wall_lines if int((geometry.get_line_vector(line).X) == 1)]
 line_segments_south = [line for line in wall_lines if int((geometry.get_line_vector(line).X) == -1)]
 line_segments_west = [line for line in wall_lines if int((geometry.get_line_vector(line).Y) == 1)]
@@ -69,8 +72,8 @@ vertical_grids = [grid for grid in grids_list if int(geometry.get_line_vector(gr
 vertical_grids = ref_elements.sort_grids_by_axis(vertical_grids,'X')
 horizontal_grids = ref_elements.sort_grids_by_axis(horizontal_grids, 'Y')
 
-horizontal_joints_x = get_panel_joints(horizontal_grids, 'X', 2)
-vertical_joints_y = get_panel_joints(vertical_grids, 'Y', 2)
+horizontal_joints_x = get_panel_joints(horizontal_grids, 'X', panels_per_bay)
+vertical_joints_y = get_panel_joints(vertical_grids, 'Y', panels_per_bay)
 
 # offset_vector = vector * (view.Scale * ((0.375) / 12))
 min_grid_horizontal = ref_elements.get_min_or_max_grid(XYZ(0,1,0), horizontal_grids, 'min')
@@ -100,13 +103,6 @@ for grid in vertical_grids:
   west_grid_ref_array.Append(Reference(grid))
 
 
-# with Transaction(doc, 'Add Joint Reference Planes') as t1:
-#     t1.Start()
-#     create_joint_reference_planes(line_segments_north, horizontal_joints_x, 'X', 'N')
-#     create_joint_reference_planes(line_segments_south, horizontal_joints_x, 'X', 'S')
-#     create_joint_reference_planes(line_segments_west, vertical_joints_y, 'Y', 'W')
-#     create_joint_reference_planes(line_segments_east, vertical_joints_y, 'Y', 'E')
-#     t1.Commit()
 with TransactionGroup(doc, 'Create Joint Dimensions') as tg:
   tg.Start()
   with Transaction(doc, 'Add Joint Reference Planes') as t1:
