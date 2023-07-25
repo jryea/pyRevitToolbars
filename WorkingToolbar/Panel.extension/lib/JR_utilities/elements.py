@@ -1,6 +1,6 @@
 from Autodesk.Revit.DB import *
 
-# FAMILY INSTANCES 
+# FAMILY INSTANCES
 def get_symbol_by_name(symbol_name, all_symbols):
   symbol = None
   for e in all_symbols:
@@ -10,7 +10,7 @@ def get_symbol_by_name(symbol_name, all_symbols):
     print(symbol_name + ' not found')
   else:
     return symbol
-  
+
 def get_symbol_by_family_and_name(symbol_name, family_name, all_symbols):
   symbol = None
   for e in all_symbols:
@@ -41,7 +41,7 @@ def get_walls_of_kind(walls, kind = ''):
     return specified_walls
   else:
     return walls
-  
+
 # BEAMS
 # Returns list of connected beam points
 def get_beam_pts_from_sorted_columns(document, columns, max_length):

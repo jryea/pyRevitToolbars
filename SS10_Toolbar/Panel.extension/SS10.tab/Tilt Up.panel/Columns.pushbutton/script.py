@@ -91,4 +91,4 @@ with revit.Transaction('Create Columns'):
     IndependentTag.Create(doc, footing_tag_symbol.Id, active_view.Id, Reference(cur_footing), False, TagOrientation.Horizontal, footing_tag_pt)
   print('{} COLUMNS({}) CREATED WITH {} FOOTINGS'.format(footing_counter, Element.Name.GetValue(column_symbol), Element.Name.GetValue(footing_symbol)))
   print('------------------------------------------------------------------------------')
-    
+

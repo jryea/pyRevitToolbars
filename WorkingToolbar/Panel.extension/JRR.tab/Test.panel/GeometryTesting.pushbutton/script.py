@@ -15,9 +15,6 @@ curve_element_list = list(curve_element_col)
 rp_list = list(reference_plane_col)
 floor_lines = [line.GeometryCurve for line in curve_element_list if str(line.LineStyle.Name) == 'IMEG_00-RED-CONSTRUCTION LINE']
 
-rp_slope = rp_list[-1]
-
-print(ref_elements.get_z_elev_from_y_and_rp_slope(rp_slope, 601.5))
 
 # line_segments_west = [line for line in floor_lines if int((geometry.get_line_vector(line).Y) == 1)]
 # line_segments_east = [line for line in floor_lines if int((geometry.get_line_vector(line).Y) == -1)]
