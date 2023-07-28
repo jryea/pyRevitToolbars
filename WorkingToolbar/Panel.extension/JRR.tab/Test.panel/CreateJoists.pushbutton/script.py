@@ -215,22 +215,20 @@ end_segment = None
 for line in bottom_left_segments:
   if line.Intersect(right_border) == SetComparisonResult.Overlap:
     start_segment = line
-  if line.GetEndPoint(1).Y >= round(horiz_grids[1].Curve.GetEndPoint(0).Y, 2):
+  if line.GetEndPoint(1).Y >= round(top_y, 2):
     end_segment = line
-tl_pt = (end_segment.GetEndPoint(0).X, horiz_grids[1].Curve.GetEndPoint(0).Y)
-tr_pt = (right_border_x, horiz_grids[1].Curve.GetEndPoint(0).Y)
+tl_pt = (end_segment.GetEndPoint(0).X, top_y)
+tr_pt = (right_border_x, top_y)
 br_pt = (right_border_x, start_segment.GetEndPoint(0).Y)
 bl_pt = (end_segment.GetEndPoint(0).X, start_segment.GetEndPoint(0).Y)
 joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
 
 # For slope, reference plane Y = X, and Z = Y
+#Using the below multiple times. Should look into making a function
 joist_pts_xyz = []
 for point in joist_pts_xy:
   point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
   joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
-print('First set of XYZ points')
-for point in joist_pts_xyz:
-  print(point)
 joist_border = create_closed_loop_from_pts(joist_pts_xyz)
 joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
 joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
@@ -263,10 +261,33 @@ for i in range(len(bottom_joist_dividers) - 1):
   joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
   joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
 
-
-
-
-
+# COLLECT SEQUENTIAL XY POINTS (LOWER RIGHT)
+left_border = bottom_joist_dividers[-1]
+left_border_x = left_border.GetEndPoint(0).X
+bottom_right_segments = [line for line in border_lines if\
+                        (line.GetEndPoint(0).X > right_border_x\
+                        or line.GetEndPoint(1).X > right_border_x)\
+                        and (line.GetEndPoint(0).Y < top_y\
+                        or line.GetEndPoint(1).Y < top_y)]
+start_segment = None
+end_segment = None
+for line in bottom_right_segments:
+  if line.Intersect(left_border) == SetComparisonResult.Overlap:
+    end_segment = line
+  if line.GetEndPoint(0).Y >= round(top_y, 2):
+    start_segment = line
+tl_pt = (left_border_x, top_y)
+tr_pt = (start_segment.GetEndPoint(0).X, top_y)
+br_pt = (start_segment.GetEndPoint(0).X, end_segment.GetEndPoint(0).Y)
+bl_pt = (left_border_x, end_segment.GetEndPoint(0).Y)
+joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
+joist_pts_xyz = []
+for point in joist_pts_xy:
+  point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+  joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
+joist_border = create_closed_loop_from_pts(joist_pts_xyz)
+joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
+joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
 
 with revit.Transaction('Create Joist Beam Systems'):
   # sketch_plane = SketchPlane.Create(doc, rp_plane)

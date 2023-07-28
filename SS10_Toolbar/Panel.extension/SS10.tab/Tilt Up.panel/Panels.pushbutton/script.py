@@ -12,14 +12,9 @@ active_view = uidoc.ActiveView
 
 def get_panel_joints(grids, direction, panels_per_bay):
   grid_pts_xy = ref_elements.get_grid_pts_xy(grids, direction)
-  print(len(grid_pts_xy))
   intermediate_pts_xy = geo.get_intermediate_pts_xy(grid_pts_xy, panels_per_bay)
-  print(len(intermediate_pts_xy))
   combined_pts_xy = grid_pts_xy + intermediate_pts_xy
-  print(len(combined_pts_xy))
   combined_pts_xy.sort()
-  for pt_xy in combined_pts_xy:
-    print(pt_xy)
   return combined_pts_xy
 
 # Collect panel end points from a given joint_width
@@ -112,26 +107,20 @@ def create_panel_with_tag(start_point, end_point, wall_mark, min_tag_threshold =
       if round(start_point.Y, 1) == round(end_point.Y, 1) and end_point.X - start_point.X > 0:
         sp_x = sp_x - joint_offset
         ep_x = ep_x + joint_offset
-        print(sp_x, ep_x)
       elif round(start_point.Y, 1) == round(end_point.Y, 1) and end_point.X - start_point.X < 0:
         sp_x = sp_x + joint_offset
         ep_x = ep_x - joint_offset
-        print(sp_x, ep_x)
       elif round(start_point.X, 1) == round(end_point.X, 1) and end_point.Y - start_point.Y > 0:
         sp_y = sp_y - joint_offset
         ep_y = ep_y + joint_offset
-        print(sp_y, ep_y)
       elif round(start_point.X, 1) == round(end_point.X, 1) and end_point.Y - start_point.Y < 0:
         sp_y = sp_y + joint_offset
         ep_y = ep_y - joint_offset
-        print(sp_y, ep_y)
       else:
-        print('THIS IS NOT WHAT I WANT!!')
-      sp = XYZ(sp_x, sp_y, sp_z)
-      ep = XYZ(ep_x, ep_y, ep_z)
+        sp = XYZ(sp_x, sp_y, sp_z)
+        ep = XYZ(ep_x, ep_y, ep_z)
       line = Line.CreateBound(sp, ep)
     except:
-      print('Line is too short')
       pass
     else:
       cur_wall = Wall.Create(doc, line, wall_type.Id, selected_base_level.Id, wall_height, wall_offset, is_flipped, is_structural)
@@ -148,7 +137,9 @@ def create_panel_with_tag(start_point, end_point, wall_mark, min_tag_threshold =
       cur_wall.get_Parameter(BuiltInParameter.WALL_KEY_REF_PARAM).Set(5)
       # Adding tag to wall
       if line.Length > min_tag_threshold:
-        create_plan_panel_tag(start_point, end_point, cur_wall)
+        tag_cur = create_plan_panel_tag(start_point, end_point, cur_wall)
+        print(tag_cur)
+
 
 def create_panels_from_segments(line_segments, cardinal_direction, min_wall_length):
   # Choosing which set of points to create walls from (horizontal or vertical)
@@ -164,7 +155,6 @@ def create_panels_from_segments(line_segments, cardinal_direction, min_wall_leng
   for i, line in enumerate(line_segments):
     line_segment_points = get_panel_points_for_line_segment(line, panel_ends, cardinal_direction)
     end_of_range = len(line_segment_points) - 1
-    # print('line {}: '.format(i+1))
     for index in range(0, end_of_range, 2):
       wall_suffix = str(wall_counter)
       if len(wall_suffix) == 1:
@@ -236,8 +226,6 @@ for symbol in family_symbol_list:
 
 # Wall Variables
 joint_width = (float(forms.ask_for_string(prompt = 'Enter joint width in inches', title = 'Joint width'))) / 12
-print(joint_width)
-# joint_width = .0625
 joint_offset = joint_width / 2
 wall_offset = -2.0
 is_flipped = False
@@ -246,9 +234,7 @@ panels_per_bay = int(forms.ask_for_string(prompt = 'Enter number of panels per g
 # panels_per_bay = 2
 
 panel_joints_horizontal = get_panel_joints(vertical_grids, 'X', panels_per_bay)
-print(len(panel_joints_horizontal))
 panel_joints_vertical = get_panel_joints(horizontal_grids, 'Y', panels_per_bay)
-print(len(panel_joints_vertical))
 panel_ends_horizontal = get_panel_ends(panel_joints_horizontal, joint_width)
 panel_ends_vertical = get_panel_ends(panel_joints_vertical, joint_width)
 
