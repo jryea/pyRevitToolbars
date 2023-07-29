@@ -35,12 +35,12 @@ def create_closed_loop_from_pts(pts_list):
     line_list.append(line_current)
   return line_list
 
-def create_joists(lines_list, textnote, joist_type_list, default_beam_type, default_spacing, joist_symbol):
-  rp_sp = lines_list[-1].GetEndPoint(1)
-  rp_ep = lines_list[-1].GetEndPoint(0)
-  rp_third_pt = lines_list[0].GetEndPoint(1)
-  rp_cur = doc.Create.NewReferencePlane2(rp_sp, rp_ep, rp_third_pt, active_view)
-  plane = rp_cur.GetPlane()
+def create_joists(lines_list, textnote, joist_type_list, default_beam_type, default_spacing, joist_symbol, reference_plane):
+  # rp_sp = lines_list[-1].GetEndPoint(1)
+  # rp_ep = lines_list[-1].GetEndPoint(0)
+  # rp_third_pt = lines_list[0].GetEndPoint(1)
+  # rp_cur = doc.Create.NewReferencePlane2(rp_sp, rp_ep, rp_third_pt, active_view)
+  plane = reference_plane.GetPlane()
   sketch_plane = SketchPlane.Create(doc, plane)
   desired_joist_type = get_joist_info_from_textnote(textnote)["type"]
   desired_joist_spacing = get_joist_info_from_textnote(textnote)["spacing"]
@@ -140,9 +140,6 @@ for rp in tos_ref_planes:
   if rp_sp.Y < horiz_grids[0].Curve.GetEndPoint(0).Y\
   and rp_ep.Y > horiz_grids[1].Curve.GetEndPoint(0).Y:
     ref_plane_current = rp
-rp_sp = ref_plane_current.BubbleEnd
-rp_ep = ref_plane_current.FreeEnd
-# rp_plane = ref_plane_current.GetPlane()
 
 bottom_joist_dividers = []
 top_y = horiz_grids[1].Curve.GetEndPoint(0).Y
@@ -178,11 +175,13 @@ joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
 #Using the below multiple times. Should look into making a function
 joist_pts_xyz = []
 for point in joist_pts_xy:
-  point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+  point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
   joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
+for point in joist_pts_xyz:
+  print(point)
 joist_border = create_closed_loop_from_pts(joist_pts_xyz)
 joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
 
 # COLLECT SEQUENTIAL XY POINTS(LOWER MIDDLE)
 for i in range(len(bottom_joist_dividers) - 1):
@@ -203,14 +202,14 @@ for i in range(len(bottom_joist_dividers) - 1):
   bl_pt = (left_x, bottom_y)
   joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
   for point in joist_pts_xy:
-    point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+    point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
     joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
-  print('Second set of XYZ points')
+  print(Element.Name.GetValue(ref_plane_current))
   for point in joist_pts_xyz:
     print(point)
   joist_border = create_closed_loop_from_pts(joist_pts_xyz)
   joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-  joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+  joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
 
 # COLLECT SEQUENTIAL XY POINTS (LOWER RIGHT)
 left_border = bottom_joist_dividers[-1]
@@ -234,11 +233,11 @@ bl_pt = (left_border_x, end_segment.GetEndPoint(0).Y)
 joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
 joist_pts_xyz = []
 for point in joist_pts_xy:
-  point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+  point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
   joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
 joist_border = create_closed_loop_from_pts(joist_pts_xyz)
 joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
 
 # COLLECT SEQUENTIAL XY POINTS (Mid Rows)
 for i, grid in enumerate(horiz_grids):
@@ -252,7 +251,6 @@ for i, grid in enumerate(horiz_grids):
         ref_plane_current = rp
     rp_sp = ref_plane_current.BubbleEnd
     rp_ep = ref_plane_current.FreeEnd
-    print(Element.Name.GetValue(ref_plane_current))
     top_y = horiz_grids[i+1].Curve.GetEndPoint(0).Y
     bottom_y = horiz_grids[i].Curve.GetEndPoint(0).Y
     joist_dividers = []
@@ -263,7 +261,6 @@ for i, grid in enumerate(horiz_grids):
       and ep.Y < horiz_grids[i].Curve.GetEndPoint(1).Y:
         joist_dividers.append(line)
     for i in range(len(joist_dividers) + 1):
-      print(i)
       # COLLECT SEQUENTIAL XY POINTS (Mid Left)
       if i == 0:
         right_x = joist_dividers[0].GetEndPoint(0).X
@@ -283,11 +280,11 @@ for i, grid in enumerate(horiz_grids):
         joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
         joist_pts_xyz = []
         for point in joist_pts_xy:
-          point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+          point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
           joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
         joist_border = create_closed_loop_from_pts(joist_pts_xyz)
         joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-        joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+        joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
       # COLLECT SEQUENTIAL XY POINTS (Mid Right)
       elif i == len(joist_dividers):
         left_x = joist_dividers[-1].GetEndPoint(0).X
@@ -307,15 +304,13 @@ for i, grid in enumerate(horiz_grids):
         joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
         joist_pts_xyz = []
         for point in joist_pts_xy:
-          point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+          point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
           joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
         joist_border = create_closed_loop_from_pts(joist_pts_xyz)
         joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-        joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+        joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
         # COLLECT SEQUENTIAL XY POINTS (Middle)
       else:
-        print('Else condition applying at:')
-        print(i)
         left_x = joist_dividers[i-1].GetEndPoint(0).X
         right_x = joist_dividers[i].GetEndPoint(0).X
         tl_pt = (left_x, top_y)
@@ -325,11 +320,11 @@ for i, grid in enumerate(horiz_grids):
         joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
         joist_pts_xyz = []
         for point in joist_pts_xy:
-          point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+          point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
           joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
         joist_border = create_closed_loop_from_pts(joist_pts_xyz)
         joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-        joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+        joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
 
 # COLLECT SEQUENTIAL XY POINTS (UPPER LEFT)
 ref_plane_current = None
@@ -376,11 +371,11 @@ joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
 #Using the below multiple times. Should look into making a function
 joist_pts_xyz = []
 for point in joist_pts_xy:
-  point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+  point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
   joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
 joist_border = create_closed_loop_from_pts(joist_pts_xyz)
 joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
 
 # COLLECT SEQUENTIAL XY POINTS(UPPER MIDDLE)
 for i in range(len(top_joist_dividers) - 1):
@@ -401,13 +396,11 @@ for i in range(len(top_joist_dividers) - 1):
   bl_pt = (left_x, bottom_y)
   joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
   for point in joist_pts_xy:
-    point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+    point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
     joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
-  for point in joist_pts_xyz:
-    print(point)
   joist_border = create_closed_loop_from_pts(joist_pts_xyz)
   joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-  joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
+  joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
 
 # COLLECT SEQUENTIAL XY POINTS (UPPER RIGHT)
 left_border = top_joist_dividers[-1]
@@ -425,25 +418,21 @@ for line in top_right_segments:
   if line.GetEndPoint(1).Y <= round(bottom_y, 2):
     end_segment = line
 top_y = start_segment.GetEndPoint(0).Y
-print(top_y)
 right_x = end_segment.GetEndPoint(0).X
 tl_pt = (left_x, top_y)
 tr_pt = (right_x, top_y)
 br_pt = (right_x, bottom_y)
 bl_pt = (left_x, bottom_y)
 joist_pts_xy = [tl_pt, tr_pt, br_pt, bl_pt]
-print('Last Border Points: ')
-print(joist_pts_xy)
 joist_pts_xyz = []
 for point in joist_pts_xy:
-  point_z = geometry.get_y_from_slope(rp_sp.Y, rp_sp.Z, rp_ep.Y, rp_ep.Z, point[1])
+  point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
   joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
 joist_border = create_closed_loop_from_pts(joist_pts_xyz)
 joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
-joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote})
-
+joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
 
 with revit.Transaction('Create Joist Beam Systems'):
   # sketch_plane = SketchPlane.Create(doc, rp_plane)
   for border in joist_borders_list:
-    create_joists(border['joist_border'], border['joist_textnote'], beam_type_list, default_beam_type, default_spacing, joist_extents_dc)
+    create_joists(border['joist_border'], border['joist_textnote'], beam_type_list, default_beam_type, default_spacing, joist_extents_dc, border['ref_plane'])
