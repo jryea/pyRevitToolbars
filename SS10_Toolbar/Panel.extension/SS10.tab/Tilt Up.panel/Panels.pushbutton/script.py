@@ -24,8 +24,6 @@ def get_panel_ends(panel_joints, joint_width):
   for joint in panel_joints:
     panel_ends.append(joint - joint_offset)
     panel_ends.append(joint + joint_offset)
-    # panel_ends.append(joint)
-    # panel_ends.append(joint)
   return panel_ends
 
 # Return XYZ points for a line segment
@@ -94,32 +92,12 @@ def create_plan_panel_tag(start_point, end_point, wall):
     else:
       tag_X = tag_X - tag_offset
   tag_point = XYZ(tag_X, tag_Y, 0)
-  IndependentTag.Create(doc, wall_tag_symbol.Id, active_view.Id, Reference(wall), False, TagOrientation.Horizontal, tag_point)
+  tag = IndependentTag.Create(doc, wall_tag_symbol.Id, active_view.Id, Reference(wall), False, TagOrientation.Horizontal, tag_point)
+  return tag
 
 def create_panel_with_tag(start_point, end_point, wall_mark, min_tag_threshold = 0):
     try:
-      sp_x = start_point.X
-      sp_y = start_point.Y
-      sp_z = start_point.Z
-      ep_x = end_point.X
-      ep_y = end_point.Y
-      ep_z = end_point.Z
-      if round(start_point.Y, 1) == round(end_point.Y, 1) and end_point.X - start_point.X > 0:
-        sp_x = sp_x - joint_offset
-        ep_x = ep_x + joint_offset
-      elif round(start_point.Y, 1) == round(end_point.Y, 1) and end_point.X - start_point.X < 0:
-        sp_x = sp_x + joint_offset
-        ep_x = ep_x - joint_offset
-      elif round(start_point.X, 1) == round(end_point.X, 1) and end_point.Y - start_point.Y > 0:
-        sp_y = sp_y - joint_offset
-        ep_y = ep_y + joint_offset
-      elif round(start_point.X, 1) == round(end_point.X, 1) and end_point.Y - start_point.Y < 0:
-        sp_y = sp_y + joint_offset
-        ep_y = ep_y - joint_offset
-      else:
-        sp = XYZ(sp_x, sp_y, sp_z)
-        ep = XYZ(ep_x, ep_y, ep_z)
-      line = Line.CreateBound(sp, ep)
+      line = Line.CreateBound(start_point, end_point)
     except:
       pass
     else:
@@ -138,12 +116,10 @@ def create_panel_with_tag(start_point, end_point, wall_mark, min_tag_threshold =
       # Adding tag to wall
       if line.Length > min_tag_threshold:
         tag_cur = create_plan_panel_tag(start_point, end_point, cur_wall)
-        print(tag_cur)
 
 
 def create_panels_from_segments(line_segments, cardinal_direction, min_wall_length):
   # Choosing which set of points to create walls from (horizontal or vertical)
-  min_panel_length = 3
   min_tagging_length = 10
   if cardinal_direction == 'north' or cardinal_direction == 'south':
     panel_ends = panel_ends_horizontal
@@ -165,7 +141,7 @@ def create_panels_from_segments(line_segments, cardinal_direction, min_wall_leng
       wall_line_length = Line.CreateBound(panel_start, panel_end).Length
       if wall_line_length > min_tagging_length:
         wall_counter += 1
-      if wall_line_length > min_panel_length:
+      if wall_line_length > min_wall_length:
         cur_wall = create_panel_with_tag(panel_start, panel_end, wall_mark_string, min_tagging_length)
 
 #lines Need to be in sequential order
@@ -219,10 +195,8 @@ family_symbol_col = FilteredElementCollector(doc)\
                      .OfClass(FamilySymbol)
 
 family_symbol_list = list(family_symbol_col)
-wall_tag_symbol = None
-for symbol in family_symbol_list:
-  if Element.Name.GetValue(symbol):
-    wall_tag_symbol = symbol
+
+wall_tag_symbol = elements.get_symbol_by_name('Tilt Up Panel Mark', family_symbol_list)
 
 # Wall Variables
 joint_width = (float(forms.ask_for_string(prompt = 'Enter joint width in inches', title = 'Joint width'))) / 12
@@ -231,7 +205,6 @@ wall_offset = -2.0
 is_flipped = False
 is_structural = True
 panels_per_bay = int(forms.ask_for_string(prompt = 'Enter number of panels per grid gap', title = 'Panels per bay'))
-# panels_per_bay = 2
 
 panel_joints_horizontal = get_panel_joints(vertical_grids, 'X', panels_per_bay)
 panel_joints_vertical = get_panel_joints(horizontal_grids, 'Y', panels_per_bay)
@@ -249,30 +222,6 @@ with revit.Transaction('Create Walls'):
   create_panels_from_segments(line_segments_south, 'south', minimum_wall_length)
   create_panels_from_segments(line_segments_east, 'east', minimum_wall_length)
   create_panels_from_segments(line_segments_west, 'west', minimum_wall_length)
-
-with revit.Transaction('Add Joint spacing'):
-  wall_col = FilteredElementCollector(doc).OfClass(Wall)
-  wall_list = list(wall_col)
-  for wall in wall_list:
-    wall_curve = wall.Location.Curve
-    print(geo.get_line_vector(wall_curve))
-    sp = wall_curve.GetEndPoint(0)
-    ep = wall_curve.GetEndPoint(1)
-    if geo.get_line_vector(wall_curve).X == 1:
-      sp = XYZ(sp.X + joint_offset, sp.Y, sp.Z)
-      ep = XYZ(ep.X - joint_offset, ep.Y, ep.Z)
-    elif geo.get_line_vector(wall_curve).X == -1:
-      sp = XYZ(sp.X - joint_offset, sp.Y, sp.Z)
-      ep = XYZ(ep.X + joint_offset, ep.Y, ep.Z)
-    elif geo.get_line_vector(wall_curve).Y == 1:
-      sp = XYZ(sp.X, sp.Y + joint_offset, sp.Z)
-      ep = XYZ(ep.X, ep.Y - joint_offset, ep.Z)
-    elif geo.get_line_vector(wall_curve).Y == -1:
-      sp = XYZ(sp.X, sp.Y - joint_offset, sp.Z)
-      ep = XYZ(ep.X, ep.Y + joint_offset, ep.Z)
-    new_wall_curve = Line.CreateBound(sp, ep)
-    wall.Location.Curve = new_wall_curve
-
 
 
 
