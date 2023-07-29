@@ -84,16 +84,9 @@ def find_intersection(line1, line2):
 
 def get_y_from_slope(x1, y1, x2, y2, x):
   # y = mx + c, m = slope, c = y-intercept
-  print('X1: ' + str(x1))
-  print('Y1: ' + str(y1))
-  print('X2: ' + str(x2))
-  print('Y2: ' + str(y2))
   m = (y2 - y1) / (x2 - x1)
-  print('Slope is: ' + str(m))
   c = y1 - m * x1
-  print('Y intercept: ' + str(c))
   y = m * x + c
-  print('Y is equal to: ' + str(y))
   return y
 
 def find_pts_inside_xy_border(points, curve_loop):

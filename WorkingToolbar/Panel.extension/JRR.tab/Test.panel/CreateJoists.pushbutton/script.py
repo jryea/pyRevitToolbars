@@ -117,9 +117,6 @@ joist_divider_lines = [line.GeometryCurve for line in curve_element_list\
 joist_divider_lines = geometry.sort_curves(joist_divider_lines, 'x')
 joist_divider_lines = geometry.set_all_curves_same_direction(joist_divider_lines, XYZ(0, -1, 0))
 
-# for textnote in texnote_type_list:
-#   print(Element.Name.GetValue(textnote))
-
 default_spacing = float(6)
 default_beam_type_id = doc.GetDefaultFamilyTypeId(ElementId(BuiltInCategory.OST_StructuralFraming))
 default_beam_type = doc.GetElement(default_beam_type_id)
@@ -177,8 +174,6 @@ joist_pts_xyz = []
 for point in joist_pts_xy:
   point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
   joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
-for point in joist_pts_xyz:
-  print(point)
 joist_border = create_closed_loop_from_pts(joist_pts_xyz)
 joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
 joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
@@ -204,9 +199,6 @@ for i in range(len(bottom_joist_dividers) - 1):
   for point in joist_pts_xy:
     point_z = ref_elements.get_z_elev_from_y_and_rp_slope(ref_plane_current, point[1])
     joist_pts_xyz.append(XYZ(point[0], point[1], point_z))
-  print(Element.Name.GetValue(ref_plane_current))
-  for point in joist_pts_xyz:
-    print(point)
   joist_border = create_closed_loop_from_pts(joist_pts_xyz)
   joist_textnote = find_textnote(bl_pt, tr_pt, textnote_list)
   joist_borders_list.append({'joist_border': joist_border, 'joist_textnote': joist_textnote, 'ref_plane': ref_plane_current})
