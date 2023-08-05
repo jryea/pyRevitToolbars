@@ -282,9 +282,9 @@ for i, grid in enumerate(horiz_grids):
         left_x = joist_dividers[-1].GetEndPoint(0).X
         right_segments = [line for line in border_lines if\
                                 line.GetEndPoint(0).X > left_x\
-                                and (line.GetEndPoint(0).Y < top_y\
-                                and line.GetEndPoint(1).Y > bottom_y)]
-        right_segment = left_segments[0]
+                                and (line.GetEndPoint(0).Y > bottom_y\
+                                and line.GetEndPoint(1).Y < top_y)]
+        right_segment = right_segments[0]
         for segment in right_segments:
           if segment.GetEndPoint(0).X > right_segment.GetEndPoint(0).X:
             right_segment = segment

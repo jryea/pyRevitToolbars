@@ -84,12 +84,9 @@ with revit.Transaction('Create Beams and Joists'):
     doc.Regenerate()
   for group in beam_pts:
     for i, pt in enumerate(group):
-      # print(pt)
       if i < len(group) - 1:
         beam_start_pt = pt
-        # print('Beam start point: ' + str(beam_start_pt))
         beam_end_pt = group[i+1]
-        # print('Beam end point: ' + str(beam_end_pt))
         beam_line = Line.CreateBound(beam_start_pt, beam_end_pt)
         cur_beam = doc.Create.NewFamilyInstance(beam_line, beam_symbol, active_view.GenLevel , Structure.StructuralType.Beam)
         cur_beam.get_Parameter(BuiltInParameter.Z_OFFSET_VALUE).Set(-(seat_depth))

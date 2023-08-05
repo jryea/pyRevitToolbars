@@ -1,6 +1,3 @@
-## 7/6
-## Create Revit transaction group
-## Create joint dimensions in a second transaction
 
 from Autodesk.Revit.DB import *
 from pyrevit import revit, forms, script

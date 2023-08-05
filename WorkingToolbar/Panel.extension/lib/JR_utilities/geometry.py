@@ -74,13 +74,27 @@ def get_intermediate_pts_xy(pts_xy, divisions):
       intermediate_pts_xy.append(intermediate_pt)
   return intermediate_pts_xy
 
-def find_intersection(line1, line2):
+def get_intersection(line1, line2):
   results = clr.Reference[IntersectionResultArray]()
   result = line1.Intersect(line2, results)
   if result != SetComparisonResult.Overlap:
     print('No Intersection Found')
   intersection = results.Item[0]
   return intersection.XYZPoint
+
+def get_xy_intersection(line1, line2):
+  if abs(get_line_vector(line1).X) == 1:
+    horiz_line = line1
+  else:
+    vert_line = line1
+  if abs(get_line_vector(line2).X) == 1:
+    horiz_line = line2
+  else:
+    vert_line = line2
+  if horiz_line and vert_line:
+    return XYZ(vert_line.GetEndPoint(0).X, horiz_line.GetEndPoint(0).Y, horiz_line.GetEndPoint(0).Z)
+  else:
+    print('One line needs to be horizontal and the other vertical')
 
 def get_y_from_slope(x1, y1, x2, y2, x):
   # y = mx + c, m = slope, c = y-intercept
@@ -153,3 +167,4 @@ def get_center_point(lines_list):
   max_y = get_min_max_xy_extents(lines_list)["max_y"]
   centerpoint = ((max_x + min_x) / 2, (max_y + min_y) / 2)
   return centerpoint
+
