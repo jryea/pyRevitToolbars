@@ -6,9 +6,6 @@ uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 active_view = uidoc.ActiveView
 
-# Line segment collection
-# Get IMEG-RED-CONSTRUCTION LINE GraphicsStyle
-# All lines in view
 curve_element_col = FilteredElementCollector(doc, active_view.Id)\
                     .OfClass(CurveElement)
 
@@ -16,7 +13,6 @@ curve_element_list = list(curve_element_col)
 
 floor_type_id = doc.GetDefaultElementTypeId(ElementTypeGroup.FloorType)
 
-# Get all lines set to IMEG_RED-CONSTRUCTION LINE GraphicsStyle
 curve_red_construction = [line for line in curve_element_list if str(line.LineStyle.Name) == 'IMEG_00-RED-CONSTRUCTION LINE']
 floor_lines = [line.GeometryCurve for line in curve_red_construction]
 

@@ -1,24 +1,23 @@
 from Autodesk.Revit.DB import *
 
-# FAMILY INSTANCES 
+# FAMILY INSTANCES
 def get_symbol_by_name(symbol_name, all_symbols):
   symbol = None
   for e in all_symbols:
     if Element.Name.GetValue(e) == symbol_name:
       symbol = e
   if not symbol:
-    print(symbol_name + ' not found')
+    print(symbol_name + ' symbol not found')
   else:
     return symbol
-  
+
 def get_symbol_by_family_and_name(symbol_name, family_name, all_symbols):
   symbol = None
   for e in all_symbols:
-    # print(e.Family)
     if Element.Name.GetValue(e) == symbol_name and Element.Name.GetValue(e.Family) == family_name:
       symbol = e
   if not symbol:
-    print('{} or {} not found'.format(symbol_name, family_name))
+    print('{} symbol or {} family not found'.format(symbol_name, family_name))
   else:
     return symbol
 
@@ -41,7 +40,7 @@ def get_walls_of_kind(walls, kind = ''):
     return specified_walls
   else:
     return walls
-  
+
 # BEAMS
 # Returns list of connected beam points
 def get_beam_pts_from_sorted_columns(document, columns, max_length):
@@ -93,10 +92,8 @@ def sort_columns(columns):
   presort_columns.sort(key=sort_y)
   for i, column in enumerate(presort_columns):
     if len(sorted_column_row) == 0:
-      print('adding column to empty row')
       sorted_column_row.append(column)
     elif round(column.Location.Point.Y, 2) == round(sorted_column_row[-1].Location.Point.Y, 2):
-      print('adding column to row')
       sorted_column_row.append(column)
     else:
       sorted_columns.append(sorted_column_row)

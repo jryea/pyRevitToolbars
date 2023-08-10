@@ -15,7 +15,6 @@ def get_cw_perp_line(curtain_wall):
   length = 0
   try:
     cw_curve = curtain_wall.Location.Curve
-    # print(cw_curve)
   except:
     print('Curtain Wall curve not found')
   else:
@@ -59,7 +58,7 @@ def get_curtain_wall_transform_info(doc, active_view, curtain_wall):
   level_elev = level.Elevation
   wall_base_offset_param = curtain_wall.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET)
   wall_base_offset = wall_base_offset_param.AsDouble()
-  bounding_box = curtain_wall.get_BoundingBox(active_view)
+  # bounding_box = curtain_wall.get_BoundingBox(active_view)
   location_curve = curtain_wall.Location.Curve
   location_sp = location_curve.GetEndPoint(0)
   location_ep = location_curve.GetEndPoint(1)
@@ -76,7 +75,6 @@ def get_curtain_wall_transform_info(doc, active_view, curtain_wall):
   else:
     print("Can't find the basepoint for an angled wall")
   length = location_curve.ApproximateLength
-  print(length)
   height = max_z - min_z
   return {"base_pt": base_pt, "length": length, "height": height}
 
@@ -114,18 +112,12 @@ symbol_list = list(symbol_col)
 
 test_perp_line =  get_cw_perp_line(curtain_walls_list[0])
 wall_panel = find_local_wall_panel(test_perp_line, wall_list)
-print('Wall Panel: ')
-print(wall_panel)
-
-print('Linked model contains {} curtain walls'.format(len(curtain_walls_list)))
 
 box_symbol = elements.get_symbol_by_name('Box', symbol_list)
 opening_symbol = elements.get_symbol_by_name('Tiltup Panel Opening', symbol_list)
 
 # This grouping is only useful for indentifying how many bounding boxes are in the view
 curtain_wall_bounding_boxes = [wall.get_BoundingBox(active_view) for wall in curtain_walls_list if wall.get_BoundingBox(active_view)]
-print('Linked model contains {} curtain wall bounding boxes'.format(len(curtain_wall_bounding_boxes)))
-
 curtain_wall_curves = [wall.Location.Curve for wall in curtain_walls_list]
 
 with revit.Transaction('Curtain Wall Openings'):

@@ -53,12 +53,9 @@ floor_curve_loop_list = [floor_curve_loop]
 
 min_column_offset_from_wall = float(forms.ask_for_string(prompt = 'Enter minimum offset from wall in feet', title = 'Minimum Column Wall Offset'))
 inset_curve_loop = CurveLoop.CreateViaOffset(floor_curve_loop, min_column_offset_from_wall, XYZ(0,0,1))
-# inset_curves = inset_curve_loop.GetEnumerator()
-# print(inset_curves)
 grid_intersections = ref_elements.find_xy_grid_intersections(grids_list)
 points_inside_border = geometry.find_pts_inside_xy_border(grid_intersections, inset_curve_loop)
 
-# column_tag_symbol = elements.get_symbol_by_name('45', family_symbol_list)
 column_tag_symbol = elements.get_symbol_by_family_and_name('45', 'IMEG_Structural Column Tag', symbol_list)
 footing_tag_symbol = elements.get_symbol_by_family_and_name('Mark Only', 'IMEG_Foundation - Ref Level Tag', symbol_list)
 footing_width = footing_symbol.get_Parameter(BuiltInParameter.STRUCTURAL_FOUNDATION_WIDTH).AsDouble()

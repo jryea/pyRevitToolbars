@@ -238,8 +238,10 @@ for i, grid in enumerate(horiz_grids):
     for rp in tos_ref_planes:
       rp_sp = rp.BubbleEnd
       rp_ep = rp.FreeEnd
-      if rp_sp.Y < horiz_grids[i].Curve.GetEndPoint(0).Y\
-      and rp_ep.Y > horiz_grids[i+1].Curve.GetEndPoint(0).Y:
+      if (rp_sp.Y < horiz_grids[i].Curve.GetEndPoint(0).Y\
+      and rp_ep.Y > horiz_grids[i+1].Curve.GetEndPoint(0).Y)\
+      or (rp_ep.Y < horiz_grids[i].Curve.GetEndPoint(0).Y\
+      and rp_sp.Y > horiz_grids[i+1].Curve.GetEndPoint(0).Y):
         ref_plane_current = rp
     rp_sp = ref_plane_current.BubbleEnd
     rp_ep = ref_plane_current.FreeEnd

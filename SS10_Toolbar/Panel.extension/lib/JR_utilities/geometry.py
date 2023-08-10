@@ -24,6 +24,45 @@ def offset_curves(lines_list, offset):
   offset_curve_loop = CurveLoop.CreateViaOffset(curve_loop, offset, XYZ(0,0,1))
   return list(offset_curve_loop)
 
+def sort_curves(lines_list, axis = 'x'):
+  sorted_curves = lines_list
+  def sort_x(line):
+    return line.GetEndPoint(0).X
+  def sort_y(line):
+    return line.GetEndPoint(0).Y
+  if axis == 'x':
+    sorted_curves.sort(key=sort_x)
+  if axis == 'y':
+    sorted_curves.sort(key=sort_y)
+  return sorted_curves
+
+def set_all_curves_same_direction(lines_list, vector):
+  sorted_lines = []
+  for line in lines_list:
+    sp = line.GetEndPoint(0)
+    ep = line.GetEndPoint(1)
+    if vector.X == 1:
+      if sp.X > ep.X:
+        sorted_lines.append(line.CreateReversed())
+      else:
+        sorted_lines.append(line)
+    if vector.X == -1:
+      if sp.X < ep.X:
+        sorted_lines.append(line.CreateReversed())
+      else:
+        sorted_lines.append(line)
+    if vector.Y == 1:
+      if sp.Y > ep.Y:
+        sorted_lines.append(line.CreateReversed())
+      else:
+        sorted_lines.append(line)
+    if vector.Y == -1:
+      if sp.Y < ep.Y:
+        sorted_lines.append(line.CreateReversed())
+      else:
+        sorted_lines.append(line)
+  return sorted_lines
+
 # POINTS
 
 def get_intermediate_pts_xy(pts_xy, divisions):
@@ -35,7 +74,7 @@ def get_intermediate_pts_xy(pts_xy, divisions):
       intermediate_pts_xy.append(intermediate_pt)
   return intermediate_pts_xy
 
-def find_intersection(line1, line2):
+def get_intersection(line1, line2):
   results = clr.Reference[IntersectionResultArray]()
   result = line1.Intersect(line2, results)
   if result != SetComparisonResult.Overlap:
@@ -43,9 +82,23 @@ def find_intersection(line1, line2):
   intersection = results.Item[0]
   return intersection.XYZPoint
 
+def get_xy_intersection(line1, line2):
+  if abs(get_line_vector(line1).X) == 1:
+    horiz_line = line1
+  else:
+    vert_line = line1
+  if abs(get_line_vector(line2).X) == 1:
+    horiz_line = line2
+  else:
+    vert_line = line2
+  if horiz_line and vert_line:
+    return XYZ(vert_line.GetEndPoint(0).X, horiz_line.GetEndPoint(0).Y, horiz_line.GetEndPoint(0).Z)
+  else:
+    print('One line needs to be horizontal and the other vertical')
+
 def get_y_from_slope(x1, y1, x2, y2, x):
   # y = mx + c, m = slope, c = y-intercept
-  m = (y1 + y2) / (x1 + x2)
+  m = (y2 - y1) / (x2 - x1)
   c = y1 - m * x1
   y = m * x + c
   return y
@@ -85,4 +138,33 @@ def find_pts_inside_xy_border(points, curve_loop):
     if is_point_inside_top == True and is_point_inside_bottom == True and is_point_inside_left == True and is_point_inside_right == True:
       points_inside_border.append(point)
   return points_inside_border
+
+def get_min_max_xy_extents(lines_list):
+  endpoints = []
+  for line in lines_list:
+    sp = line.GetEndPoint(0)
+    ep = line.GetEndPoint(1)
+    endpoints.extend([sp, ep])
+  min_x = endpoints[0].X
+  max_x = endpoints[0].X
+  min_y = endpoints[0].Y
+  max_y = endpoints[0].Y
+  for pt in endpoints:
+    if pt.X < min_x:
+      min_x = pt.X
+    if pt.X > max_x:
+      max_x = pt.X
+    if pt.Y < min_y:
+      min_y = pt.Y
+    if pt.Y > max_y:
+      max_y = pt.Y
+  return {"min_x": min_x, "max_x": max_x, "min_y": min_y, "max_y": max_y}
+
+def get_center_point(lines_list):
+  min_x = get_min_max_xy_extents(lines_list)["min_x"]
+  max_x = get_min_max_xy_extents(lines_list)["max_x"]
+  min_y = get_min_max_xy_extents(lines_list)["min_y"]
+  max_y = get_min_max_xy_extents(lines_list)["max_y"]
+  centerpoint = ((max_x + min_x) / 2, (max_y + min_y) / 2)
+  return centerpoint
 

@@ -86,22 +86,12 @@ arch_windows =  [window for window in arch_windows_list if window.SuperComponent
 curtain_walls = [wall for wall in curtain_walls_list if wall]
 # all_arch_openings = arch_doors + arch_windows + curtain_walls
 
-print('Linked model contains {} door instances'.format(len(arch_doors_list)))
-print('Linked model contains {} root door instances'.format(len(arch_doors)))
-print('Linked model contains {} window instances'.format(len(arch_windows_list)))
-print('Linked model contains {} root window instances'.format(len(arch_windows)))
-print('Linked model contains {} curtain walls'.format(len(curtain_walls)))
-
-
 family_symbol = elements.get_symbol_by_name('Tiltup Panel Opening', symbol_list)
 
 # This grouping is only useful for indentifying how many bounding boxes are in the view
 door_bounding_boxes = [door.get_BoundingBox(active_view) for door in arch_doors if door.get_BoundingBox(active_view)]
-print('Linked model contains {} door bounding boxes'.format(len(door_bounding_boxes)))
 window_bounding_boxes = [window.get_BoundingBox(active_view) for window in arch_windows if window.get_BoundingBox(active_view)]
-print('Linked model contains {} window bounding boxes'.format(len(window_bounding_boxes)))
 curtain_wall_bounding_boxes = [wall.get_BoundingBox(active_view) for wall in curtain_walls if wall.get_BoundingBox(active_view)]
-print('Linked model contains {} curtain wall bounding boxes'.format(len(curtain_wall_bounding_boxes)))
 all_arch_bounding_boxes = door_bounding_boxes + window_bounding_boxes + curtain_wall_bounding_boxes
 
 door_host_curves = [door.Host.Location.Curve for door in arch_doors]
@@ -145,13 +135,10 @@ with revit.Transaction('test'):
         perp_line_end = XYZ(x_location, bounding_box.Max.Y + perp_line_ext, z_location)
         perp_line = Line.CreateBound(perp_line_start, perp_line_end)
         cur_ref_plane = doc.Create.NewReferencePlane(perp_line_start, perp_line_end, XYZ(0,0,1), active_view)
-        ## Draw perp_line as a model line
-      # base_point = XYZ(x_location, y_location, z_location)
+
       base_point = geometry.get_xy_intersection(perp_line, door_host_curve)
       height = bounding_box.Max.Z - bounding_box.Min.Z
       arch_door_transforms.append({'base_point': base_point, 'length': length, 'height': height, 'perp_line': perp_line})
-      # for door in arch_door_transforms:
-        # print(door['base_point'], door['length'], door['height'], door['perp_line'])
 
   for transform in arch_door_transforms:
     wall_host = None
@@ -159,7 +146,6 @@ with revit.Transaction('test'):
       if wall.Location.Curve.Intersect(transform['perp_line']) == SetComparisonResult.Overlap:
         wall_host = wall
     opening = doc.Create.NewFamilyInstance(transform['base_point'], family_symbol, wall_host, level, StructuralType.NonStructural)
-    # opening = doc.Create.NewFamilyInstance(arch_opening['base_point'], family_symbol, StructuralType.NonStructural)
     height_param = opening.LookupParameter('Height')
     height_param.Set(transform['height'])
     length_param = opening.LookupParameter('Length')

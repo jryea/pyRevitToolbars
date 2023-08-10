@@ -10,14 +10,7 @@ active_view = uidoc.ActiveView
 
 def get_panel_joints(grids, direction, panels_per_bay):
   grid_pts_xy = ref_elements.get_grid_pts_xy(grids, direction)
-  print('Direction: ' + str(direction))
-  print('Grid Points: ')
-  for point in grid_pts_xy:
-    print(point)
   intermediate_pts_xy = geometry.get_intermediate_pts_xy(grid_pts_xy, panels_per_bay)
-  print('Intermediate Points: ')
-  for point in intermediate_pts_xy:
-    print(point)
   return intermediate_pts_xy
 
 def create_joint_reference_planes(lines, panel_joints, direction = 'X', prefix = 'N'):
@@ -59,11 +52,9 @@ curve_element_list = list(curve_element_col)
 curve_red_construction = [line for line in curve_element_list if str(line.LineStyle.Name) == 'IMEG_00-RED-CONSTRUCTION LINE']
 floor_lines = [line.GeometryCurve for line in curve_red_construction]
 wall_curves_offset = -(5 / 12)
-
 wall_lines = geometry.offset_curves(floor_lines, wall_curves_offset)
 
 panels_per_bay = int(forms.ask_for_string(prompt = 'Enter number of panels per grid gap', title = 'Panels per bay'))
-
 
 line_segments_north = [line for line in wall_lines if int((geometry.get_line_vector(line).X) == 1)]
 line_segments_south = [line for line in wall_lines if int((geometry.get_line_vector(line).X) == -1)]
@@ -74,12 +65,7 @@ horizontal_grids = [grid for grid in grids_list if int(geometry.get_line_vector(
 vertical_grids = [grid for grid in grids_list if int(geometry.get_line_vector(grid.Curve).Y) == 0]
 
 vertical_grids = ref_elements.sort_grids_by_axis(vertical_grids,'Y')
-print('Vertical Grids: ')
-for grid in vertical_grids:
-  print(grid.Curve.GetEndPoint(0).Y)
 horizontal_grids = ref_elements.sort_grids_by_axis(horizontal_grids, 'X')
-for grid in horizontal_grids:
-  print(grid.Curve.GetEndPoint(0).X)
 
 horizontal_joints_x = get_panel_joints(horizontal_grids, 'X', panels_per_bay)
 vertical_joints_y = get_panel_joints(vertical_grids, 'Y', panels_per_bay)

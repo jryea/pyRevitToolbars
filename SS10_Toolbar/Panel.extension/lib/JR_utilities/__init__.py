@@ -16,25 +16,18 @@ def does_string_contain_word(full_string, word):
   else:
     return False
 
-
-# def get_panel_joints(grids, direction, panels_per_bay):
-#   if len(grids) <= 1:
-#     print('There are not enough grids to create panel joints')
-#     return
-#   if direction == 'horizontal':
-#     grid_points = [grid.Curve.GetEndPoint(0).X for grid in grids]
-#   if direction == 'vertical':
-#     grid_points = [grid.Curve.GetEndPoint(0).Y for grid in grids]
-#   panel_joints = grid_points[:]
-#   distance_between_grids = grid_points[1] - grid_points[0]
-#   distance_between_panels = distance_between_grids / panels_per_bay
-
-#   for index, grid_point in enumerate(grid_points):
-#     # Skip last grid
-#     if index < len(grid_points) - 1:
-#       # Add intermediate points
-#       for i in range(panels_per_bay - 1):
-#         intermediate_joint = grid_points[index] + distance_between_panels * (i+1)
-#         panel_joints.append(intermediate_joint)
-#   panel_joints.sort()
-#   return panel_joints
+def draw_bounding_box_rect(doc, active_view, bounding_box):
+  bb_min = bounding_box.Min
+  bb_max = bounding_box.Max
+  tl_pt = XYZ(bb_min.X, bb_max.Y, 0)
+  tr_pt = XYZ(bb_max.X, bb_max.Y, 0)
+  br_pt = XYZ(bb_max.X, bb_min.Y, 0)
+  bl_pt = XYZ(bb_min.X, bb_min.Y, 0)
+  top_line = Line.CreateBound(tl_pt, tr_pt)
+  right_line = Line.CreateBound(tr_pt, br_pt)
+  bottom_line = Line.CreateBound(br_pt, bl_pt)
+  left_line = Line.CreateBound(bl_pt, tl_pt)
+  doc.Create.NewDetailCurve(active_view, top_line)
+  doc.Create.NewDetailCurve(active_view, right_line)
+  doc.Create.NewDetailCurve(active_view, bottom_line)
+  doc.Create.NewDetailCurve(active_view, left_line)
