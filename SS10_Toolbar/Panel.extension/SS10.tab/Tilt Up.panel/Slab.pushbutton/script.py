@@ -1,6 +1,6 @@
 from Autodesk.Revit.DB import *
-from pyrevit import revit, forms, script
-from System.Collections import IList
+from pyrevit import revit, forms
+from JR_utilities import geometry
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
@@ -21,7 +21,34 @@ for line in floor_lines:
   curve_loop.Append(line)
 curve_loop_list = [curve_loop]
 inset_curve_loop = CurveLoop.CreateViaOffset(curve_loop, 10.0, XYZ(0,0,1))
+
 inset_curves = inset_curve_loop.GetEnumerator()
+# for curve in inset_curves:
+#   print(int(geometry.get_line_vector(curve).X))
+
+# inset_curves_left = [line for line in inset_curves\
+#                     if int(geometry.get_line_vector(line).Y) == 1]
+# inset_curves_right = [line for line in inset_curves\
+#                      if int(geometry.get_line_vector(line).Y) == -1]
+# inset_curves_top = [line for line in inset_curves\
+#                      if int(geometry.get_line_vector(line).X) == 1]
+# inset_curves_bottom = [line for line in inset_curves\
+#                      if int(geometry.get_line_vector(line).X) == -1]
+
+# print(len(inset_curves_left))
+# print(len(inset_curves_right))
+# print(len(inset_curves_top))
+# print(len(inset_curves_bottom))
+
+# tl_pt = XYZ(min_x, max_y, 0)
+# tr_pt = XYZ(max_x, max_y, 0)
+# br_pt = XYZ(max_x, min_y, 0)
+# bl_pt = XYZ(min_x, min_y, 0)
+# simplified_inset_pts = [tl_pt, tr_pt, br_pt, bl_pt]
+# simplified_inset_lines = geometry.create_lines_from_points(simplified_inset_pts)
+# print(len(simplified_inset_lines))
+# print(simplified_inset_lines)
+
 current_view_level_id = active_view.GenLevel.Id
 graphics_styles = FilteredElementCollector(doc) \
                   .OfClass(GraphicsStyle)

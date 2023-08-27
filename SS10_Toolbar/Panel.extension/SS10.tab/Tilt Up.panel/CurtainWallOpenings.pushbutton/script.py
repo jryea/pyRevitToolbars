@@ -58,7 +58,7 @@ def get_curtain_wall_transform_info(doc, active_view, curtain_wall):
   level_elev = level.Elevation
   wall_base_offset_param = curtain_wall.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET)
   wall_base_offset = wall_base_offset_param.AsDouble()
-  # bounding_box = curtain_wall.get_BoundingBox(active_view)
+  bounding_box = curtain_wall.get_BoundingBox(active_view)
   location_curve = curtain_wall.Location.Curve
   location_sp = location_curve.GetEndPoint(0)
   location_ep = location_curve.GetEndPoint(1)

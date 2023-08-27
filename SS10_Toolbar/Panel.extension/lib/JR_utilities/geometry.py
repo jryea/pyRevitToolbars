@@ -36,6 +36,24 @@ def sort_curves(lines_list, axis = 'x'):
     sorted_curves.sort(key=sort_y)
   return sorted_curves
 
+#input points need to be sequential
+def create_lines_from_points(points):
+  lines = []
+  pt_len = len(points)
+  for i in range(pt_len):
+    print(i)
+    if i < (pt_len - 1):
+      cur_line = Line.CreateBound(points[i], points[i + 1])
+      lines.append(cur_line)
+    else:
+      cur_line = Line.CreateBound(points[i], points[0])
+      lines.append(cur_line)
+  if len(lines) > 0:
+    return lines
+  else:
+    print('no lines were created')
+
+
 def set_all_curves_same_direction(lines_list, vector):
   sorted_lines = []
   for line in lines_list:

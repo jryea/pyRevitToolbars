@@ -3,6 +3,9 @@ title: |-
   Cleanup
 
 tooltip: >-
-  Renames drafting views on selected sheets using sheet number, detail number, and title on sheet, then changes the view type to match the sheet number.
+  Rename drafting views on selected sheets using sheet number, detail number, and title on sheet, then changes the view type to match the sheet number.
+
+  Shift-Click:
+  Rename files only using the sheet number and detail number
 
 author: Jon Ryea

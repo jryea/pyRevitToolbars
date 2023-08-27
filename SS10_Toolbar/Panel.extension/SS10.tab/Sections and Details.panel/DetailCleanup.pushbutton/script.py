@@ -1,4 +1,3 @@
-
 from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, Document, Transaction, ViewFamily, ViewFamilyType, Element, ViewDrafting
 from pyrevit import revit, forms, script
 
@@ -59,8 +58,11 @@ with revit.Transaction('Update detail view names'):
         title_on_sheet = ''.join(title_on_sheet_param.AsString().splitlines())
 
         # set new view name
-        # Added @@@ at the end of the name to prevent the same name as another on the sheet during renaming
-        new_view_name = '{}/{}_{}@@@'.format(sheet_number,detail_number,title_on_sheet)
+        # Add @@@ at the end of the name to prevent the same name as another on the sheet during renaming
+        if __shiftclick__:
+          new_view_name = '{}/{}@@@'.format(sheet_number,detail_number)
+        else:
+          new_view_name = '{}/{}_{}@@@'.format(sheet_number,detail_number,title_on_sheet)
         view.Name = new_view_name
         view.ChangeTypeId(new_type_id)
 
