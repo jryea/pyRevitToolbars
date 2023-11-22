@@ -7,11 +7,14 @@ def convert_deg_to_XYZ(angle_deg):
   angle_rad = (180 - angle_deg) * math.pi / 180.0
   return XYZ(math.cos(angle_rad), math.sin(angle_rad), 0)
 
-def get_line_vector(line):
+def get_line_vector(line, isAbsolute=False):
   startpoint = line.GetEndPoint(0)
   endpoint = line.GetEndPoint(1)
   vector = endpoint - startpoint
   normalized_vector = vector.Normalize()
+  absolute_vector = XYZ(abs(normalized_vector.X), abs(normalized_vector.Y), abs(normalized_vector.Z))
+  if isAbsolute == True:
+    return absolute_vector
   return normalized_vector
 
 # CURVES

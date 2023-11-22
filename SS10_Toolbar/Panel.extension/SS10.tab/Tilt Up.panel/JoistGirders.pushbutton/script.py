@@ -74,7 +74,7 @@ class FamilySymbol(forms.TemplateListItem):
     return Element.Name.GetValue(doc.GetElement(self.Id))
 
 beam_type_options = [FamilySymbol(beam_type) for beam_type in beam_type_list]
-beam_symbol = forms.SelectFromList.show(beam_type_options, multiselect = False, title = 'Select column type')
+beam_symbol = forms.SelectFromList.show(beam_type_options, multiselect = False, title = 'Select Joist Girder Type')
 
 beam_tag_symbol = elements.get_symbol_by_family_and_name('Standard', 'IMEG_Structural Framing Tag', family_symbol_list)
 

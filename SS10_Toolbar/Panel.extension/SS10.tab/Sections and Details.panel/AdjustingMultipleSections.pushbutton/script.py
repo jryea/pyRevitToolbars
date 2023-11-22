@@ -14,7 +14,7 @@ def get_drafting_views_from_views(view):
       return view
 
 with revit.Transaction('transaction'):
-  if selected_elements: 
+  if selected_elements:
     desired_view_id = forms.select_views(title='Select new reference view', multiple = False, filterfunc=get_drafting_views_from_views).Id
     if desired_view_id:
       print('SECTION VIEW REFERENCES CHANGED:')
@@ -30,7 +30,7 @@ with revit.Transaction('transaction'):
         except:
           forms.alert('Please select only sections that reference drafting views')
           break
-        
+
 
 
 

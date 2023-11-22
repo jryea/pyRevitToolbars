@@ -1,20 +1,9 @@
-## 6/12/23: ran into error that dimensions were being created below revits dimension tolerance
-# The problem: when there was only a single grid running in at a certain vector, the min and max grids were returning the same grid
-# Fixed for now by ignoring all vector sets of grids that only contain a single grid
-# May want to try an alternate version that dimensions absolute vector sets. So if grids are the same angle, but running in opposite directions they will get grouped together in the same set
-
 from Autodesk.Revit.DB import *
 from pyrevit import revit, forms, script
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 active_view = uidoc.ActiveView
-
-def absolute_vector_from_vector(vector):
-  abs_x = abs(vector.X())
-  abs_y = abs(vector.Y())
-  abs_z = abs(vector.Z())
-  return XYZ(abs_x, abs_y, abs_z)
 
 def sort_grids_by_axis(grids, axis = 'X'):
   # Returns list
@@ -90,6 +79,13 @@ with revit.Transaction('Create Grids'):
         max_grid = get_min_or_max_grid(vector, grids, 'max')
         grid_line_startpoint = min_grid.Curve.GetEndPoint(0)
         grid_line_endpoint = max_grid.Curve.GetEndPoint(0)
+
+        #Adding conditional to make sure X and Y grids dimensions are aligned
+        if vector.X == 1:
+          grid_line_endpoint = XYZ(grid_line_startpoint.X, grid_line_endpoint.Y, grid_line_endpoint.Z)
+        if vector.Y == 1:
+          grid_line_endpoint = XYZ(grid_line_endpoint.X, grid_line_startpoint.Y, grid_line_endpoint.Z)
+
         #move line points by adding offset_vector
         overall_dim_line_startpoint = grid_line_startpoint + offset_vector * 0.5
         overall_dim_line_endpoint = grid_line_endpoint + offset_vector * 0.5

@@ -113,7 +113,6 @@ symbol_list = list(symbol_col)
 test_perp_line =  get_cw_perp_line(curtain_walls_list[0])
 wall_panel = find_local_wall_panel(test_perp_line, wall_list)
 
-box_symbol = elements.get_symbol_by_name('Box', symbol_list)
 opening_symbol = elements.get_symbol_by_name('Tiltup Panel Opening', symbol_list)
 
 # This grouping is only useful for indentifying how many bounding boxes are in the view
